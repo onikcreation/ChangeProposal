@@ -57968,7 +57968,9 @@ function DeselectSelectedOptionAdd(elem) {
                     },
                     complete: function () { $.unblockUI(); },
                     error: function (data) {
-                        $('#sessionIds').html(window.ORIGINAL_SESSION_OPTIONS_HTML);
+                        // append (not .html()) so the "Last Session" option added above
+                        // when a Program is selected isn't wiped out by the restore.
+                        $('#sessionIds').append(window.ORIGINAL_SESSION_OPTIONS_HTML);
                         $('#sessionIds').multiselect({ includeSelectAllOption: true });
                         $('#sessionIds').multiselect('rebuild');
                     }
