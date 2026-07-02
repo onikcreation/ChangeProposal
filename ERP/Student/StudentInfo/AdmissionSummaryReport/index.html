@@ -57700,6 +57700,10 @@ function DeselectSelectedOptionAdd(elem) {
             // once this cached list gets restored/appended after a failed reload) so it
             // always shows up whenever the Session dropdown gets rebuilt.
             window.ORIGINAL_SESSION_OPTIONS_HTML = "<option value=\"-1\">Last Session</option>" + $('#sessionIds').html();
+            // Apply it to the actual dropdown immediately too — otherwise "Last Session"
+            // only shows up after Organization/Program triggers a reload, not on the
+            // very first page load before anything's been touched.
+            $('#sessionIds').html(window.ORIGINAL_SESSION_OPTIONS_HTML);
 
             muliselectfnc($('#programIds'), "All Program");
             muliselectfnc($('#sessionIds'), "All Session");
