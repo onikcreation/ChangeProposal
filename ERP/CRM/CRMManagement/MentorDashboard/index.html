@@ -8457,8 +8457,8 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                         </td>
                         <td style="padding-right: 8px; width: 130px;">
                           <select class="form-control" id="trIdStatus" name="trIdStatus">
-                              <option value="Working" selected="selected">Working TrID</option>
-                              <option value="Active">Active TrID</option>
+                              <option value="Working" selected="selected">Working Tr ID</option>
+                              <option value="Active">Active Tr ID</option>
                             </select>
                         </td>
                         <td style="padding-right: 8px; width: 130px;">
@@ -12216,8 +12216,8 @@ function DeselectSelectedOptionAdd(elem) {
                     var selectedMentors = $('#mentorIds').val();
                     var selectedBranches = $('#branchIds').val();
                     var selectedPrograms = $('#programIds').val();
-                    // Active TrID = only Tracking IDs that still have an Entry button (i.e.
-                    // Pending > 0) — anything fully done drops out. Working TrID (default)
+                    // Active Tr ID = only Tracking IDs that still have an Entry button (i.e.
+                    // Pending > 0) — anything fully done drops out. Working Tr ID (default)
                     // keeps everything, same as before.
                     var trIdStatus = $('#trIdStatus').val();
                     var filtered = $.grep(fakeDashboardData, function (row) {
@@ -12231,10 +12231,10 @@ function DeselectSelectedOptionAdd(elem) {
                         return mentorOk && branchOk && programOk && trIdOk;
                     });
 
-                    // Demo: Active TrID pulls from a lighter data source that doesn't carry
+                    // Demo: Active Tr ID pulls from a lighter data source that doesn't carry
                     // the per-entry breakdown — Tracking ID 310340 demonstrates this: under
-                    // Working TrID its real Entry By/Today Entry/Avg Call Time/Deadline show
-                    // as usual, but under Active TrID none of that is available, so it
+                    // Working Tr ID its real Entry By/Today Entry/Avg Call Time/Deadline show
+                    // as usual, but under Active Tr ID none of that is available, so it
                     // collapses to a single dashed-out row instead.
                     if (trIdStatus === 'Active') {
                         filtered = $.map(filtered, function (row) {
@@ -12807,7 +12807,7 @@ function DeselectSelectedOptionAdd(elem) {
                     <ol style="padding-left:20px; margin:0 0 20px;">
                       <li style="margin-bottom:14px;">
                         <strong>উপরের ফিল্টার অপশনে চারটি নতুন অপশন যোগ করা হয়েছে</strong>
-                        <p style="margin:4px 0 0; color:#555;">Mentor ও Branch ফিল্টারের পর — Program (মাল্টি-সিলেক্ট), View By (একটাই সিলেক্ট করা যাবে: Programwise / Pinwise), TrID Status (একটাই সিলেক্ট করা যাবে: Working TrID / Active TrID), এরপর ক্যালেন্ডার যোগ করা হয়েছে এবং Search বাটন থাকবে।</p>
+                        <p style="margin:4px 0 0; color:#555;">Mentor ও Branch ফিল্টারের পর — Program (মাল্টি-সিলেক্ট), View By (একটাই সিলেক্ট করা যাবে: Programwise / Pinwise), Tr ID Status (একটাই সিলেক্ট করা যাবে: Working Tr ID / Active Tr ID), এরপর ক্যালেন্ডার যোগ করা হয়েছে এবং Search বাটন থাকবে।</p>
                       </li>
                       <li style="margin-bottom:14px;">
                         <strong>Mentor</strong>
@@ -12822,8 +12822,8 @@ function DeselectSelectedOptionAdd(elem) {
                         <p style="margin:4px 0 0; color:#555;">Programwise/Pinwise যেকোনো একটি সিলেক্ট করে ডাটা সার্চ করা যাবে। ডিফল্টভাবে Programwise সিলেক্ট থাকবে।</p>
                       </li>
                       <li style="margin-bottom:14px;">
-                        <strong>TrID Status</strong>
-                        <p style="margin:4px 0 0; color:#555;">Working TrID/Active TrID যেকোনো একটি সিলেক্ট করে ডাটা সার্চ করা যাবে। ডিফল্টভাবে Working TrID সিলেক্ট থাকবে। এই অবস্থায় সার্চ করা হলে সিলেক্টেড তারিখ অনুযায়ি যে Tracking ID গুলোতে ডাটা এন্ট্রি করা হয়েছে সেই অনুযায়ি তথ্য দেখাবে। Active TrID সিলেক্ট করলে যেসব Tracking ID এখন একটিভ আছে সেই অনুযায়ি ডাটা দেখাবে।</p>
+                        <strong>Tr ID Status</strong>
+                        <p style="margin:4px 0 0; color:#555;">Working Tr ID/Active Tr ID যেকোনো একটি সিলেক্ট করে ডাটা সার্চ করা যাবে। ডিফল্টভাবে Working Tr ID সিলেক্ট থাকবে। এই অবস্থায় সার্চ করা হলে সিলেক্টেড তারিখ অনুযায়ি যে Tracking ID গুলোতে ডাটা এন্ট্রি করা হয়েছে সেই অনুযায়ি তথ্য দেখাবে। Active Tr ID সিলেক্ট করলে যেসব Tracking ID এখন একটিভ আছে সেই অনুযায়ি ডাটা দেখাবে।</p>
                       </li>
                       <li>
                         <strong>ক্যালেন্ডার অপশন</strong>
