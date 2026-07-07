@@ -15775,15 +15775,49 @@ $(document).ready(function () {
             });
             $('.enroll-badge-section .badge').css('min-width', maxWidth + 'px');
 
+            // Manage Student Feedback > Call Stats Type mapping for each Student Feedback
+            // checkbox id shown on this page (see ManageStudentFeedback_Offline.html's
+            // feedbackData). Id 60 ("রিং হয়ে কেটে যায়") has no Call Stats Type on the
+            // Manage Student Feedback list yet, so it stays visible in both states.
+            var callStatsTypeMap = {
+                1: 'receive', 2: 'receive', 6: 'receive', 32: 'receive', 35: 'receive',
+                36: 'receive', 46: 'receive', 9: 'receive', 28: 'receive',
+                17: 'not-receive', 10: 'not-receive', 48: 'not-receive',
+                60: null, 47: 'receive', 50: 'receive', 51: 'receive'
+            };
+
+            function filterStudentFeedbackByCallStatus(selectedValue) {
+                var wantedType = selectedValue == 20 ? 'receive' : (selectedValue == 30 ? 'not-receive' : null);
+                $('.comments-section .comments-container').each(function () {
+                    var checkbox = $(this).find('input.check-input');
+                    var type = callStatsTypeMap[parseInt(checkbox.val())];
+                    var visible = !wantedType || !type || type === wantedType;
+                    $(this).toggle(visible);
+                    if (!visible && checkbox.prop('checked')) {
+                        checkbox.prop('checked', false);
+                    }
+                });
+            }
+
             function toggleReceivedContent() {
                 const selectedValue = $('.comments-section input[name="CallStatus"]:checked').val();
 
                 // Contacted Number + Conversation Duration: only for Call Received.
+                // Fully hidden (not just disabled) when Call Not Received is selected.
                 if (selectedValue == 20) {
-                    $('.comments-section .received-wise-content').removeClass('block-overlay');
+                    $('.comments-section .received-wise-content').show().removeClass('block-overlay');
+                }
+                else if (selectedValue == 30) {
+                    $('.comments-section .received-wise-content').hide();
+
+                    $('.comments-section .received-wise-content').find('input[type="radio"][name="ContactedNumber"]').prop('checked', false);
+                    $('.comments-section .received-wise-content').find('input[type="text"]').val('');
+
+                    $('#contacted-number-error').text('');
+                    $('#conversation-duration-error').text('');
                 }
                 else {
-                    $('.comments-section .received-wise-content').addClass('block-overlay');
+                    $('.comments-section .received-wise-content').show().addClass('block-overlay');
 
                     $('.comments-section .received-wise-content').find('input[type="radio"][name="ContactedNumber"]').prop('checked', false);
                     $('.comments-section .received-wise-content').find('input[type="text"]').val('');
@@ -15805,6 +15839,11 @@ $(document).ready(function () {
                     $('#checkbox-error').text('');
                     $('.customAreaValidation').text('');
                 }
+
+                // Only show the Student Feedback options matching the selected Call Stats
+                // Type (Manage Student Feedback > Call Stats Type). Shows every option until
+                // a Call Status is selected.
+                filterStudentFeedbackByCallStatus(selectedValue);
 
                 if (selectedValue) {
                     $('#SubmitNext').prop('disabled', false);
@@ -16460,7 +16499,7 @@ $(document).ready(function () {
                                                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:.85; text-shadow:none;"><span aria-hidden="true">&times;</span></button>
                                                                             <h4 class="modal-title" id="pageChangesModalLabel">এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে</h4>
                                                                           </div>
-                                                                          <div class="modal-body">
+                                                                          <div class="modal-body" style="max-height:65vh; overflow-y:auto;">
                                                                             <p style="font-weight:bold; margin-bottom:12px;">নতুন আপডেট:</p>
                                                                             <ol style="padding-left:20px; margin:0;">
                                                                               <li style="margin-bottom:16px;">
@@ -16475,9 +16514,13 @@ $(document).ready(function () {
                                                                                 <strong>যে নম্বরে কথা হয়েছে সেই তথ্য সেভ রাখার ফিচার যোগ করতে হবে।</strong>
                                                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Conversation Entry ফর্মে "Call Received" সিলেক্ট থাকলে একটা নতুন রেডিও-বাটন গ্রুপ "যে নম্বরে কথা হয়েছে:" দেখাবে (ডিফল্টভাবে Student Feedback-এর মতো ডিসেবল থাকবে, Call Received ক্লিক করলে একটিভ হবে) — Student / Father / Mother, ডিফল্টভাবে কোনোটাই সিলেক্ট থাকবে না এবং এটি বাধ্যতামূলক (Submit করার আগে সিলেক্ট না করলে এরর দেখাবে)। এন্ট্রি Submit করার সময় এই তথ্য সেভ হবে এবং Call History-র কার্ড ও "Details" ভিউ দুই জায়গাতেই অন্য তথ্যের সাথে মোবাইল নম্বরসহ দেখা যাবে (যেমন: Student (01711223344))। "Call Not Received" এন্ট্রির কার্ডে এই ফিল্ড দেখাবে না (যেহেতু কল রিসিভই হয়নি)।</p>
                                                                               </li>
-                                                                              <li>
+                                                                              <li style="margin-bottom:16px;">
                                                                                 <strong>Call Not Received রেডিও বাটন সিলেক্ট করে Student Feedback সহ Submit & Next করা যাবে।</strong>
                                                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Call Received সিলেক্ট করলে যে নম্বরে কথা হয়েছে, Student Feedback, Conversation Duration একটিভ হবে ও দেওয়া বাধ্যতামূলক। Remarks লজিক আগের মতোই থাকবে। Call Not Received সিলেক্ট করলে শুধু Student Feedback একটিভ হবে ও দেওয়া বাধ্যতামূলক। Remarks লজিক আগের মতোই থাকবে।</p>
+                                                                              </li>
+                                                                              <li>
+                                                                                <strong>Student Feedback অপশনগুলো Call Stats Type অনুযায়ী ফিল্টার হবে, এবং Call Not Received সিলেক্ট করলে "যে নম্বরে কথা হয়েছে" ও "Conversation Duration" সেকশন হাইড হয়ে যাবে।</strong>
+                                                                                <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Manage Student Feedback পেইজে প্রতিটি Student Feedback-এর জন্য যে "Call Stats Type" (Call Receive / Call Not Receive) সিলেক্ট করা আছে, সেই অনুযায়ী এই পেইজের Student Feedback চেকবক্সগুলো ফিল্টার হয়ে দেখাবে — "Call Received" ক্লিক করলে শুধু Call Receive টাইপের অপশন, "Call Not Received" ক্লিক করলে শুধু Call Not Receive টাইপের অপশন দেখাবে। পেইজ লোড হওয়ার সময় (কোনো রেডিও বাটন ক্লিক করার আগ পর্যন্ত) সবগুলো অপশনই দেখাবে। ফিল্টার হয়ে হাইড হওয়া কোনো অপশন আগে টিক দেওয়া থাকলে সেটা অটোমেটিক আনটিক হয়ে যাবে। এছাড়া "Call Not Received" সিলেক্ট করলে "যে নম্বরে কথা হয়েছে:" ও "Conversation Duration" সেকশন দুটো এখন সম্পূর্ণ হাইড হয়ে যাবে (আগে শুধু ডিসেবল/আবছা দেখাতো)।</p>
                                                                               </li>
                                                                             </ol>
                                                                           </div>
