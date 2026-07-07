@@ -12527,8 +12527,8 @@ function DeselectSelectedOptionAdd(elem) {
                         $tbody.append($tr);
                     });
 
-                    /* Total row — only for people with multiple entries */
-                    if (count > 1) {
+                    /* Total row — shown for every person, even with just one entry */
+                    {
                         $tbody.append(
                             '<tr>' +
                             '<td colspan="4" style="text-align:right;"><strong>Total</strong></td>' +
