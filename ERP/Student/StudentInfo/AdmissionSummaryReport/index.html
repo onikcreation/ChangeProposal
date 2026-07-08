@@ -18282,6 +18282,24 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                             </div>
                           </div>
                           <div class="form-group">
+                            <label class="control-label col-md-2" for="Program_Type:">
+                              Program Type:
+                            </label>
+                            <div class="col-md-4">
+                              <select class="form-control" id="programType" name="programType" style="min-width:100%">
+                                <option value="0">
+                                  All
+                                </option>
+                                <option selected="selected" value="1">
+                                  Paid
+                                </option>
+                                <option value="2">
+                                  Free
+                                </option>
+                              </select>
+                            </div>
+                          </div>
+                          <div class="form-group">
                             <label class="control-label col-md-2" for="Date_From:" id="dateFromLabel">
                               Date From:
                             </label>
@@ -59131,9 +59149,20 @@ function DeselectSelectedOptionAdd(elem) {
                                           "Birganj", "Bogura", "Chandpur", "Chattogram", "Cumilla", "Dinajpur",
                                           "Faridpur", "Gazipur", "Jashore", "Khulna", "Mirpur", "Mymensingh",
                                           "Narayanganj", "Rajshahi", "Rangpur", "Sylhet", "Tangail", "Uttara"];
-                                      var FAKE_ADM_COLUMNS = ["MAP", "MAPO", "2nd MAPO", "EAP", "EAPO", "VAP 'KA'",
+                                      var FAKE_ADM_COLUMNS_PAID = ["MAP", "MAPO", "2nd MAPO", "EAP", "EAPO", "VAP 'KA'",
                                           "VAP 'KA'O", "2nd VAP KAO", "VAP KHA", "VAP KHAO", "2nd VAP KHAO", "CAP",
                                           "CAPO", "SSC MT", "SSC MTO", "SSC FRCO", "HSC MT", "HSC MTO", "HSC FRCO"];
+                                      var FAKE_ADM_COLUMNS_FREE = ["C6 AFP", "C7 AFP", "C8 AFP", "C9 AFP", "C10 AFP",
+                                          "C11 AFP", "C12 AFP", "Utkorsho FC", "HSC MT FC", "College Adm FC"];
+
+                                      // Program Type filter (All/Paid/Free) decides which set of program
+                                      // columns the report shows; read fresh on every "View" click.
+                                      function getProgramTypeColumns() {
+                                          var pt = $("#programType").val();
+                                          if (pt === "2") return FAKE_ADM_COLUMNS_FREE;
+                                          if (pt === "0") return FAKE_ADM_COLUMNS_PAID.concat(FAKE_ADM_COLUMNS_FREE);
+                                          return FAKE_ADM_COLUMNS_PAID;
+                                      }
 
                                       // A mentor is assigned to several branches — "All" shows every branch,
                                       // picking a specific mentor filters the table down to just their branches.
@@ -59191,6 +59220,7 @@ function DeselectSelectedOptionAdd(elem) {
                                       }
 
                                       function renderFakeAdmissionSummary() {
+                                          var FAKE_ADM_COLUMNS = getProgramTypeColumns();
                                           var groups = getBranchGroups();
                                           var isGrouped = groups.length > 1;
                                           var isCompare = $("#sessionCompare").is(":checked");
@@ -59303,6 +59333,7 @@ function DeselectSelectedOptionAdd(elem) {
                                       // Generation Type: "All Branch to My Branch" / "My Branch to All Branch" —
                                       // each program column splits into Total/Own/Other sub-columns.
                                       function renderFakeCrossBranchSummary() {
+                                          var FAKE_ADM_COLUMNS = getProgramTypeColumns();
                                           var branchGroups = getBranchGroups();
                                           var isGrouped = branchGroups.length > 1;
                                           var SUB = ["Total", "Own", "Other"];
@@ -59425,9 +59456,13 @@ function DeselectSelectedOptionAdd(elem) {
                                                 <strong>Branch Mentor ফিল্টারে MentorWise অপশন যোগ করা হয়েছে।</strong>
                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Branch Mentor ড্রপডাউনে MentorWise অপশন সিলেক্ট করে ভিউ করা হলে সব ব্রাঞ্চের ডাটা দেখাবে, কিন্তু ফ্ল্যাট লিস্ট না দেখিয়ে প্রতিটা মেন্টরের নামে গ্রুপ করে দেখাবে।</p>
                                               </li>
-                                              <li>
+                                              <li style="margin-bottom:16px;">
                                                 <strong>আগের বছরের একই সেশনের সাথে তুলনা করার জন্য Previous Session Compare অপশন যোগ করা হয়েছে।</strong>
                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> শুধু একটি Session সিলেক্ট করলে এবং Generation Type: Summary Report থাকলেই Generation Type-এর পাশে নতুন চেকবক্স অপশনটা দেখা যাবে। এই চেকবক্স অন করে ডাটা ভিউ করা হলে, রিপোর্টের প্রতিটা প্রোগ্রাম কলাম তিনটা সাব-কলামে ভাগ হয়ে দেখাবে: আগের বছর, এই বছর, পার্থক্য। এই ডাটা Till Date অথবা, Date From - Date To অনুযায়ি ঠিক আগের বছরের একই দিনের সাথে তুলনা করে দেখতে হবে।</p>
+                                              </li>
+                                              <li>
+                                                <strong>Report Type-এর পাশে নতুন Program Type (All/Paid/Free) ফিল্টার যোগ করা হয়েছে, ডিফল্ট Paid সিলেক্ট থাকে।</strong>
+                                                <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Paid সিলেক্ট থাকলে (ডিফল্ট) রিপোর্টে শুধু Paid প্রোগ্রামের কলাম দেখাবে, Free সিলেক্ট করলে শুধু Free প্রোগ্রামের কলাম দেখাবে, আর All সিলেক্ট করলে Paid ও Free দুই ধরনের প্রোগ্রামের কলামই একসাথে দেখাবে। Generation Type-এর সবগুলো অপশনেই (Summary Report, All Branch to My Branch, My Branch to All Branch) এই ফিল্টার কাজ করে।</p>
                                               </li>
                                             </ol>
                                             <p style="font-weight:bold; margin-bottom:6px; color:#B42318;">Bug:</p>
