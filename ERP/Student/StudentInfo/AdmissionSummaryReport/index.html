@@ -15818,24 +15818,33 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
     }
                 </style>
                 <style>
-                    #pageChangesBtn {
-                        display: inline-block;
+                    #pageChangesBtnGroup {
+                        display: inline-flex;
+                        gap: 8px;
                         position: absolute;
                         left: 50%;
                         top: 11px;
                         transform: translateX(-50%);
+                        z-index: 1031;
+                    }
+                    #pageChangesBtn, #pageChangesBtnOld {
+                        display: inline-block;
                         padding: 6px 12px;
                         line-height: 1.2;
                         text-align: center;
                         border-radius: 6px;
-                        background: #F59E0B;
                         border: 2px solid #fff;
                         color: #fff !important;
                         font-size: 12.5px;
                         font-weight: bold;
                         white-space: nowrap;
-                        z-index: 1031;
+                    }
+                    #pageChangesBtn {
+                        background: #F59E0B;
                         animation: pageChangesPulse 1.6s infinite;
+                    }
+                    #pageChangesBtnOld {
+                        background: #6B7280;
                     }
                     @keyframes pageChangesPulse {
                         0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .7); }
@@ -15843,9 +15852,14 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                         100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
                     }
                 </style>
-                <a href="javascript:void(0)" id="pageChangesBtn" data-toggle="modal" data-target="#pageChangesModal" title="এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে">
-                  New Updates
-                </a>
+                <div id="pageChangesBtnGroup">
+                  <a href="javascript:void(0)" id="pageChangesBtn" data-toggle="modal" data-target="#pageChangesModal" title="এই পেইজে যা নতুন পরিবর্তন/আপডেট করা হয়েছে">
+                    New Updates
+                  </a>
+                  <a href="javascript:void(0)" id="pageChangesBtnOld" data-toggle="modal" data-target="#pageChangesModalOld" title="এই পেইজে আগে যা যা পরিবর্তন/আপডেট করা হয়েছিল">
+                    Old Updates
+                  </a>
+                </div>
                 <form action="javascript:void(0)" onsubmit="return false;" class="navbar-right" id="logoutForm" method="post">
                   <ul class="nav navbar-nav navbar-right">
                     <li class="blink">
@@ -59439,30 +59453,50 @@ function DeselectSelectedOptionAdd(elem) {
                                           setTimeout(updateSessionCompareVisibility, 0);
                                       });
                                     </script>
-                                    <!-- Developer requirement: an info button on the page that pops up the
-                                         list of design/logic changes proposed for this page (same content as
-                                         AdmissionSummaryReport_Changes.txt, summarized for quick reading). -->
+                                    <!-- Developer requirement: two info buttons on the page — "New Updates"
+                                         (pulsing) pops up only the latest proposed change, "Old Updates"
+                                         (static, no animation) pops up everything proposed before that —
+                                         same content as AdmissionSummaryReport_Changes.txt, summarized for
+                                         quick reading, split by recency instead of one combined list. -->
                                     <div class="modal fade" id="pageChangesModal" tabindex="-1" role="dialog" aria-labelledby="pageChangesModalLabel">
                                       <div class="modal-dialog modal-lg" role="document">
                                         <div class="modal-content">
                                           <div class="modal-header" style="background:#4338CA; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px;">
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:.85; text-shadow:none;"><span aria-hidden="true">&times;</span></button>
-                                            <h4 class="modal-title" id="pageChangesModalLabel">এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে</h4>
+                                            <h4 class="modal-title" id="pageChangesModalLabel">এই পেইজে যা নতুন পরিবর্তন/আপডেট করা হয়েছে</h4>
                                           </div>
                                           <div class="modal-body">
                                             <p style="font-weight:bold; margin-bottom:12px;">নতুন আপডেট:</p>
+                                            <ol style="padding-left:20px; margin:0;">
+                                              <li>
+                                                <strong>Report Type-এর পাশে নতুন Program Type (All/Paid/Free) ফিল্টার যোগ করা হয়েছে, ডিফল্ট Paid সিলেক্ট থাকে।</strong>
+                                                <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Paid সিলেক্ট থাকলে (ডিফল্ট) রিপোর্টে শুধু Paid প্রোগ্রামের কলাম দেখাবে, Free সিলেক্ট করলে শুধু Free প্রোগ্রামের কলাম দেখাবে, আর All সিলেক্ট করলে Paid ও Free দুই ধরনের প্রোগ্রামের কলামই একসাথে দেখাবে। Generation Type-এর সবগুলো অপশনেই (Summary Report, All Branch to My Branch, My Branch to All Branch) এই ফিল্টার কাজ করে।</p>
+                                              </li>
+                                            </ol>
+                                          </div>
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-default" data-dismiss="modal">বন্ধ করুন</button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="modal fade" id="pageChangesModalOld" tabindex="-1" role="dialog" aria-labelledby="pageChangesModalOldLabel">
+                                      <div class="modal-dialog modal-lg" role="document">
+                                        <div class="modal-content">
+                                          <div class="modal-header" style="background:#6B7280; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px;">
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:.85; text-shadow:none;"><span aria-hidden="true">&times;</span></button>
+                                            <h4 class="modal-title" id="pageChangesModalOldLabel">এই পেইজে আগে যা যা পরিবর্তন/আপডেট করা হয়েছিল</h4>
+                                          </div>
+                                          <div class="modal-body">
+                                            <p style="font-weight:bold; margin-bottom:12px;">আগের আপডেট:</p>
                                             <ol style="padding-left:20px; margin:0 0 20px;">
                                               <li style="margin-bottom:16px;">
                                                 <strong>Branch Mentor ফিল্টারে MentorWise অপশন যোগ করা হয়েছে।</strong>
                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Branch Mentor ড্রপডাউনে MentorWise অপশন সিলেক্ট করে ভিউ করা হলে সব ব্রাঞ্চের ডাটা দেখাবে, কিন্তু ফ্ল্যাট লিস্ট না দেখিয়ে প্রতিটা মেন্টরের নামে গ্রুপ করে দেখাবে।</p>
                                               </li>
-                                              <li style="margin-bottom:16px;">
+                                              <li>
                                                 <strong>আগের বছরের একই সেশনের সাথে তুলনা করার জন্য Previous Session Compare অপশন যোগ করা হয়েছে।</strong>
                                                 <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> শুধু একটি Session সিলেক্ট করলে এবং Generation Type: Summary Report থাকলেই Generation Type-এর পাশে নতুন চেকবক্স অপশনটা দেখা যাবে। এই চেকবক্স অন করে ডাটা ভিউ করা হলে, রিপোর্টের প্রতিটা প্রোগ্রাম কলাম তিনটা সাব-কলামে ভাগ হয়ে দেখাবে: আগের বছর, এই বছর, পার্থক্য। এই ডাটা Till Date অথবা, Date From - Date To অনুযায়ি ঠিক আগের বছরের একই দিনের সাথে তুলনা করে দেখতে হবে।</p>
-                                              </li>
-                                              <li>
-                                                <strong>Report Type-এর পাশে নতুন Program Type (All/Paid/Free) ফিল্টার যোগ করা হয়েছে, ডিফল্ট Paid সিলেক্ট থাকে।</strong>
-                                                <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> Paid সিলেক্ট থাকলে (ডিফল্ট) রিপোর্টে শুধু Paid প্রোগ্রামের কলাম দেখাবে, Free সিলেক্ট করলে শুধু Free প্রোগ্রামের কলাম দেখাবে, আর All সিলেক্ট করলে Paid ও Free দুই ধরনের প্রোগ্রামের কলামই একসাথে দেখাবে। Generation Type-এর সবগুলো অপশনেই (Summary Report, All Branch to My Branch, My Branch to All Branch) এই ফিল্টার কাজ করে।</p>
                                               </li>
                                             </ol>
                                             <p style="font-weight:bold; margin-bottom:6px; color:#B42318;">Bug:</p>
