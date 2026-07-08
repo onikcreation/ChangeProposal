@@ -59458,6 +59458,13 @@ function DeselectSelectedOptionAdd(elem) {
                                          (static, no animation) pops up everything proposed before that —
                                          same content as AdmissionSummaryReport_Changes.txt, summarized for
                                          quick reading, split by recency instead of one combined list. -->
+                                    <style>
+                                      @media screen and (min-width: 768px) {
+                                        #pageChangesModal .modal-dialog, #pageChangesModalOld .modal-dialog {
+                                          width: 60%;
+                                        }
+                                      }
+                                    </style>
                                     <div class="modal fade" id="pageChangesModal" tabindex="-1" role="dialog" aria-labelledby="pageChangesModalLabel">
                                       <div class="modal-dialog modal-lg" role="document">
                                         <div class="modal-content">
