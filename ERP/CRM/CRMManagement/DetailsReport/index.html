@@ -7904,6 +7904,35 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
         font-weight:bold;
     }
                 </style>
+                <style>
+                    #pageChangesBtn {
+                        display: inline-block;
+                        position: absolute;
+                        left: 50%;
+                        top: 11px;
+                        transform: translateX(-50%);
+                        padding: 6px 12px;
+                        line-height: 1.2;
+                        text-align: center;
+                        border-radius: 6px;
+                        background: #F59E0B;
+                        border: 2px solid #fff;
+                        color: #fff !important;
+                        font-size: 12.5px;
+                        font-weight: bold;
+                        white-space: nowrap;
+                        z-index: 1031;
+                        animation: pageChangesPulse 1.6s infinite;
+                    }
+                    @keyframes pageChangesPulse {
+                        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .7); }
+                        70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                    }
+                </style>
+                <a href="javascript:void(0)" id="pageChangesBtn" data-toggle="modal" data-target="#pageChangesModal" title="এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে">
+                  New Updates
+                </a>
                 <form action="javascript:void(0)" onsubmit="return false;" class="navbar-right" id="logoutForm" method="post">
                   <ul class="nav navbar-nav navbar-right">
                     <li class="blink">
@@ -9016,10 +9045,7 @@ table.DTFC_Cloned thead,table.DTFC_Cloned tfoot{background-color:white}div.DTFC_
                             Status
                           </label>
                           <div class="col-md-4">
-                            <select name="entryStatus" id="entryStatus" class="form-control">
-                              <option value="">
-                                All
-                              </option>
+                            <select name="entryStatus" id="entryStatus" class="form-control" multiple="multiple">
                               <option value="10">
                                 Pending
                               </option>
@@ -9153,7 +9179,7 @@ table.DTFC_Cloned thead,table.DTFC_Cloned tfoot{background-color:white}div.DTFC_
                     </div>
                   </div>
                   <div id="dataTablePanel">
-                    <div class="panel panel-primary" id="detailsPanel">
+                    <div class="panel panel-primary" id="detailsPanel" style="display:none;">
                       <div class="panel-heading" id="ShowHide" title="Colapse">
                         <h4 class="panel-title">
                           Details
@@ -28867,6 +28893,12 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         const executedById = '#exceutedById';
         const trackingShowId = '#trackingNoId';
 
+        // Demo: whether this page was opened via a Mentor Dashboard clickable-total
+        // link (always carries ?count=) rather than visited directly — only that case
+        // auto-fills the Tracking ID box and auto-loads a report on page open; a direct
+        // visit starts empty and waits for the user to type a Tracking ID and submit.
+        var cameFromDrillDownLink = new URLSearchParams(window.location.search).has('count');
+
         // Demo: total fake row count driven by a ?count=N query param (used when this
         // page is opened from another already-converted page's clickable totals),
         // defaulting to 25 when absent so the page still shows a plausible result set.
@@ -28892,21 +28924,44 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
 
         // Demo: when a Mentor Dashboard Total/Grand Total number (spanning more than one
         // Tracking ID) is clicked, it passes ?trIds=<id>:<count>,<id>:<count>,... — one
-        // entry per contributing Tracking ID. When this has more than one entry, the page
-        // shows every one of those Tracking IDs (comma-separated) and renders a separate
-        // fake table per Tracking ID instead of one merged table. A single-entry or
-        // missing ?trIds= param means "just one Tracking ID", so the existing single-table
-        // behavior below is unaffected.
+        // entry per contributing Tracking ID, giving the exact row count to fabricate for
+        // each. This is only used to look up a known count per Tracking ID below — which
+        // Tracking IDs are actually shown always comes from the Tracking ID box itself
+        // (see currentTrackingIdBreakdown), so a Mentor Dashboard link and someone typing
+        // the same comma-separated IDs directly into the box render identically.
         var demoTrIdsParam = new URLSearchParams(window.location.search).get('trIds');
-        var demoTrIdsBreakdown = demoTrIdsParam
-            ? demoTrIdsParam.split(',').map(function (pair) {
+        var demoTrIdCountMap = {};
+        if (demoTrIdsParam) {
+            demoTrIdsParam.split(',').forEach(function (pair) {
                 var parts = pair.split(':');
-                return { trackingId: parts[0], count: parseInt(parts[1], 10) || 0 };
-            }).filter(function (p) { return p.count > 0; })
-            : [];
+                var id = (parts[0] || '').trim();
+                var count = parseInt(parts[1], 10) || 0;
+                if (id && count > 0) { demoTrIdCountMap[id] = count; }
+            });
+        }
 
         // Demo: tracking id used to drive the fabricated header/table on auto-run — not a real record.
         const demoTrackingNo = '100000';
+
+        // Demo: plausible row count for a Tracking ID typed directly into the box, which
+        // has no known count from a Mentor Dashboard link.
+        function demoFakeCountForTrackingId() { return demoRandInt(3, 20); }
+
+        // Demo: builds the per-Tracking-ID breakdown driving the multi-panel view from
+        // whatever is currently in the Tracking ID box — same parsing whether that text
+        // arrived via a Mentor Dashboard ?trIds= link (box is pre-filled on load) or was
+        // typed in directly and submitted, so both paths render identically. A single
+        // Tracking ID (or an empty box) yields a 0-or-1-length array, leaving the existing
+        // single-table behavior unaffected.
+        function currentTrackingIdBreakdown() {
+            var seen = {};
+            var ids = ($(trackingNoId).val() || '').split(',')
+                .map(function (s) { return s.trim(); })
+                .filter(function (id) { return id && !seen[id] && (seen[id] = true); });
+            return ids.map(function (id) {
+                return { trackingId: id, count: demoTrIdCountMap[id] || demoFakeCountForTrackingId() };
+            });
+        }
 
         // variable decalre
 
@@ -29211,14 +29266,16 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 // simulate the round trip and fabricate `demoTotalCount` rows instead
                 // (see the ?count= query-param handling above).
                 setTimeout(function () {
-                    if (demoTrIdsBreakdown.length > 1) {
-                        // Multiple Tracking IDs contributed to the clicked Total/Grand
-                        // Total number — show them all, one table per Tracking ID.
-                        var allTrackingIds = $.map(demoTrIdsBreakdown, function (p) { return p.trackingId; }).join(', ');
+                    var trackingBreakdown = currentTrackingIdBreakdown();
+                    if (trackingBreakdown.length > 1) {
+                        // More than one Tracking ID is in the box — whether it got there via
+                        // a Mentor Dashboard Total/Grand Total click or was typed in by hand —
+                        // show them all, one table per Tracking ID.
+                        var allTrackingIds = $.map(trackingBreakdown, function (p) { return p.trackingId; }).join(', ');
                         $(trackingShowId).text(allTrackingIds);
                         $('#detailsPanel').hide();
                         $('#multiTrackingContainer').show();
-                        renderMultiTrackingTables(demoTrIdsBreakdown);
+                        renderMultiTrackingTables(trackingBreakdown);
                     } else {
                         $(trackingShowId).text(trackingNo);
                         $('#multiTrackingContainer').hide().empty();
@@ -29258,9 +29315,14 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         $(document).ready(function () {
         
             multiselectfnc($(studentCommentsId), "Select All");
-            
+            multiselectfnc($(entryStatusId), "All");
+
 
             $(document).on('change', studentCommentsId, function () {
+                AdjustMultiSelectSelectAll($(this));
+            })
+
+            $(document).on('change', entryStatusId, function () {
                 AdjustMultiSelectSelectAll($(this));
             })
 
@@ -29338,18 +29400,25 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
             })
 
             $(document).on("input propertychange", trackingNoId, function () {
-                var inputValue = $(this).val().trim();
+                var inputValue = $(this).val();
 
-                // Only allow numeric input
-                var numericValue = inputValue.replace(/[^0-9]/g, '');
-                if (numericValue !== inputValue) {
-                    $(this).val(numericValue);
-                    inputValue = numericValue;
+                // Only allow digits, commas and spaces — commas separate multiple
+                // Tracking IDs entered directly into the box.
+                var cleanedValue = inputValue.replace(/[^0-9, ]/g, '');
+                if (cleanedValue !== inputValue) {
+                    $(this).val(cleanedValue);
+                    inputValue = cleanedValue;
                 }
 
+                // Autocomplete looks only at the Tracking ID currently being typed
+                // (the text after the last comma), so it keeps suggesting matches
+                // per-ID while multiple comma-separated IDs are being entered.
+                var segments = inputValue.split(',');
+                var currentSegment = segments[segments.length - 1].trim();
+
                 // Only trigger backend call when exactly 6 digits are entered
-                if (inputValue.length >= 6) {
-                    loadTrackingInfo(inputValue);
+                if (currentSegment.length >= 6) {
+                    loadTrackingInfo(currentSegment);
                 }
                 else {
                     $('#likeSearchDataListContainer').empty();
@@ -29357,7 +29426,13 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
             });
 
             $(document).on("click", '.single-tracking-info', function () {
-                $('#TrackingId').val($(this).attr('data-href'));
+                // Replace only the Tracking ID currently being typed (after the last
+                // comma) with the picked suggestion, keeping any earlier
+                // comma-separated Tracking IDs already entered intact.
+                var segments = $(trackingNoId).val().split(',');
+                segments[segments.length - 1] = $(this).attr('data-href');
+                var rebuilt = segments.map(function (s) { return s.trim(); }).filter(Boolean).join(', ');
+                $(trackingNoId).val(rebuilt);
                 //$('#btnView').click();
                 $('#likeSearchDataListContainer').empty();
             });
@@ -29366,16 +29441,20 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 $('#likeSearchDataListContainer').empty();
             });
 
-            // Demo: auto-run on page open so a link with ?count=N (e.g. from a
-            // clickable total on another already-converted page) immediately shows a
-            // populated report, matching the "already submitted" state the original
-            // capture was taken in.
-            $(trackingNoId).val(
-                demoTrIdsBreakdown.length > 1
-                    ? $.map(demoTrIdsBreakdown, function (p) { return p.trackingId; }).join(', ')
-                    : demoTrackingNo
-            );
-            NextOperation();
+            // Demo: only auto-run on page open when arriving via a Mentor Dashboard
+            // clickable-total link (?count= present) — the Tracking ID box auto-fills
+            // and a populated report shows immediately, matching the "already
+            // submitted" state the original capture was taken in. A direct visit to
+            // this page (no ?count=) starts with an empty box and no report — the user
+            // must type a Tracking ID and click Submit themselves.
+            if (cameFromDrillDownLink) {
+                $(trackingNoId).val(
+                    Object.keys(demoTrIdCountMap).length > 1
+                        ? Object.keys(demoTrIdCountMap).join(', ')
+                        : demoTrackingNo
+                );
+                NextOperation();
+            }
         })
 
          $(document).on('click', exportButtonId, function () {
@@ -29411,12 +29490,21 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         });
 
         // Keep the left sidebar's "CRM Management" panel always expanded — block any
-        // collapse, whether from its own header being clicked or from the Bootstrap
-        // accordion auto-closing it when another sidebar panel opens. The page's own
-        // active-menu-highlighting script strips "in" from every sidebar panel that
-        // doesn't match this page's business ID, then re-adds it only to the matching
-        // one — this page isn't under CRM Management's business IDs, so force it open.
-        $('#collapse_962').addClass('in');
+        // collapse, whether from its own header being clicked, the Bootstrap accordion
+        // auto-closing it when another sidebar panel opens, or this page's own
+        // active-menu-highlighting/sidebar-search scripts elsewhere on the page (they
+        // detect the current page via window.location.pathname, which on this
+        // file:// offline copy never matches a real "/Student/CrmReport/..." route, so
+        // they can't correctly re-open it themselves — and they strip "in"/set an
+        // inline height via raw class/style edits, not Bootstrap's collapse API, so the
+        // hide.bs.collapse guard alone doesn't catch them). Re-assert both the class and
+        // a cleared inline height on every ready pass and once more after full page load
+        // to win regardless of run order.
+        function forceOpenCrmManagementMenu() {
+            $('#collapse_962').css('height', '').addClass('in');
+        }
+        forceOpenCrmManagementMenu();
+        $(window).on('load', forceOpenCrmManagementMenu);
         $('#collapse_962').on('hide.bs.collapse', function (e) {
             e.preventDefault();
         });
@@ -30502,6 +30590,98 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                     </table>
                   </div>
                 </div>
+                <!-- Developer requirement: an info button on the page that pops up the
+                     list of design/logic changes proposed for this page (same content as
+                     DetailsReport_Changes.txt, summarized for quick reading). -->
+                <style>
+                  @media screen and (min-width: 768px) {
+                    #pageChangesModal .modal-dialog, #pageChangesModalOld .modal-dialog {
+                      width: 60%;
+                    }
+                  }
+                </style>
+                <div class="modal fade" id="pageChangesModal" tabindex="-1" role="dialog" aria-labelledby="pageChangesModalLabel">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header" style="background:#4338CA; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px;">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:.85; text-shadow:none;"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="pcm-copy-btn" title="সম্পূর্ণ কনটেন্ট কপি করুন" style="float:right; margin:-2px 8px 0 0; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.5); color:#fff; border-radius:4px; padding:2px 10px; font-size:12px; line-height:1.6; cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px; margin-right:4px;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>Copy</button>
+                        <h4 class="modal-title" id="pageChangesModalLabel">এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে</h4>
+                      </div>
+                      <div class="modal-body" style="height:65vh; overflow-y:auto;">
+                        <p style="font-weight:bold; margin-bottom:4px;">ফিল্টার বার:</p>
+                        <ol style="padding-left:20px; margin:0 0 20px;">
+                          <li style="margin-bottom:14px;">
+                            <strong>Tracking ID বক্সে একাধিক আইডি:</strong>
+                            <p style="margin:4px 0 0; color:#555;">"Tracking ID" বক্সে এখন কমা দিয়ে একাধিক Tracking ID (যেমন: 310010, 310020) লিখে সার্চ করা যাবে।<br>Mentor Dashboard থেকে ক্লিক করে আসলে বা সরাসরি এই পেইজে এসে হাতে টাইপ করলে, দুই ক্ষেত্রেই একই আচরণ করবে।</p>
+                          </li>
+                          <li>
+                            <strong>Status এখন মাল্টি-সিলেক্ট:</strong>
+                            <p style="margin:4px 0 0; color:#555;">একসাথে একাধিক Status সিলেক্ট করে সার্চ করা যাবে। কিছু সিলেক্ট না করলে All সিলেক্ট থাকবে।</p>
+                          </li>
+                        </ol>
+                        <p style="font-weight:bold; margin-bottom:4px;">ডাটা টেবিল / ডিটেইলস প্যানেল:</p>
+                        <ol style="padding-left:20px; margin:0;">
+                          <li style="margin-bottom:14px;">
+                            <strong>প্রতিটা Tracking ID-এর জন্য স্বতন্ত্র প্যানেল:</strong>
+                            <p style="margin:4px 0 0; color:#555;">একাধিক Tracking ID থাকলে প্রতিটার জন্য সম্পূর্ণ স্বতন্ত্র একটা "Details" প্যানেল তৈরি হবে। প্যানেলের হেডিং-এ "Details - Tracking ID: 310010" এভাবে লেখা থাকে, এবং প্রতিটা প্যানেল স্বতন্ত্রভাবে ক্লিক করে এক্সপান্ড/কলাপ্স করা যাবে।</p>
+                          </li>
+                          <li>
+                            <p style="margin:4px 0 0; color:#555;">Mentor Dashboard-এর Total/Grand Total সংখ্যা একাধিক Tracking ID মিলে হতে পারে - সেই সংখ্যায় ক্লিক করলে (বা বক্সে কমা দিয়ে একাধিক আইডি লিখে সার্চ করলে) প্রতিটা Tracking ID-এর জন্য আলাদা ডাটা টেবিল দেখাবে।</p>
+                          </li>
+                        </ol>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">বন্ধ করুন</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <script>
+                  // Copy button in the "New Updates" popup header — copies that
+                  // modal's full body text to the clipboard. Tries the modern
+                  // Clipboard API first (most reliable); if it's unavailable/denied,
+                  // falls back to selecting the modal body's real, visible text (more
+                  // reliable for execCommand('copy') than a detached/hidden textarea,
+                  // and inside a Bootstrap modal a detached node can lose focus to the
+                  // modal's own focus trap before the copy fires). Only claims success
+                  // ("Copied!") when a copy actually happened.
+                  function pcmFeedback(btn, label) {
+                      var original = btn.innerHTML;
+                      btn.innerHTML = label;
+                      setTimeout(function () { btn.innerHTML = original; }, 1800);
+                  }
+                  function pcmSelectionFallbackCopy(btn, modalBody) {
+                      try {
+                          var range = document.createRange();
+                          range.selectNodeContents(modalBody);
+                          var sel = window.getSelection();
+                          sel.removeAllRanges();
+                          sel.addRange(range);
+                          var ok = document.execCommand('copy');
+                          sel.removeAllRanges();
+                          pcmFeedback(btn, ok ? 'Copied!' : 'সিলেক্ট হয়েছে, Ctrl+C চাপুন');
+                      } catch (err) {
+                          pcmFeedback(btn, 'কপি ব্যর্থ হয়েছে');
+                      }
+                  }
+                  document.addEventListener('click', function (e) {
+                      var btn = e.target.closest('.pcm-copy-btn');
+                      if (!btn) return;
+                      var modalBody = btn.closest('.modal-content').querySelector('.modal-body');
+                      if (!modalBody) return;
+                      var text = modalBody.innerText || modalBody.textContent || '';
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                          navigator.clipboard.writeText(text).then(function () {
+                              pcmFeedback(btn, 'Copied!');
+                          }).catch(function () {
+                              pcmSelectionFallbackCopy(btn, modalBody);
+                          });
+                      } else {
+                          pcmSelectionFallbackCopy(btn, modalBody);
+                      }
+                  });
+                </script>
                 <script>
                   // This is a static design demo — it must never navigate away to the
                   // real umsbd.net site (menu links, notice links, logout, form POST, etc.
