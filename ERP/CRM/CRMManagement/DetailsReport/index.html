@@ -29931,7 +29931,7 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 var $block = $(
                     '<div class="panel panel-primary" style="margin-bottom:15px;">' +
                     '<div class="panel-heading" data-toggle="collapse" href="#' + collapseId + '" style="cursor:pointer;">' +
-                    '<h4 class="panel-title">Total Data: ' + entry.count + ' : Details - Tracking ID: ' + entry.trackingId + titleSuffix +
+                    '<h4 class="panel-title">Total Data: ' + entry.count + ' : Tracking ID: ' + entry.trackingId + titleSuffix +
                     '<span style="float:right;"><i class="fa ' + (startExpanded ? 'fa-minus' : 'fa-plus') + '" aria-hidden="true"></i></span>' +
                     '</h4>' +
                     '</div>' +
@@ -30085,13 +30085,14 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         // - Default (Programwise): grouped by Tracking ID — one shared program-info
         //   block (buildHeadContentHtml) per Tracking ID, since it doesn't change from
         //   one contributing team member to the next, then one panel per Executed By
-        //   underneath (titled "Details - Executed By: X", no Tracking ID repeated —
-        //   it's already shown once, always visible, in the shared block above).
+        //   underneath (titled "Total Data: N : Executed By: X", no Tracking ID
+        //   repeated — it's already shown once, always visible, in the shared block
+        //   above).
         // - Pinwise (groupBy=executedBy): grouped by Executed By instead — a person can
         //   span several different programs, so there's no single program-info block
         //   to share; instead a lightweight "Executed By: Name" block (
         //   buildExecutedByHeadHtml) sits once at the top, and each panel underneath
-        //   (titled "Details - Tracking ID: X" this time) carries its own full
+        //   (titled "Total Data: N : Tracking ID: X" this time) carries its own full
         //   program-info block, since that genuinely differs panel to panel here.
         function renderEntryBreakdownTables(breakdown) {
             var $container = $('#multiTrackingContainer').empty();
@@ -30121,8 +30122,8 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                     var collapseId = 'collapse_eb_' + gi + '_' + pi;
                     var rows = generateFakeReportRows(entry.count, entry.executedBy);
                     var panelTitle = 'Total Data: ' + entry.count + ' : ' + (groupByExecutedBy
-                        ? 'Details - Tracking ID: ' + entry.trackingId
-                        : 'Details - Executed By: ' + entry.executedBy);
+                        ? 'Tracking ID: ' + entry.trackingId
+                        : 'Executed By: ' + entry.executedBy);
                     // Pinwise's panels each need their own program-info block (omitted
                     // for Programwise, where it's already shown once above the group).
                     var ownHeadHtml = groupByExecutedBy ? buildHeadContentHtml(entry.trackingId) : '';
