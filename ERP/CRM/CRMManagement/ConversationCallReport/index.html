@@ -8315,13 +8315,12 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                       </label>
                       <div class="col-md-4">
                         <select class="form-control" id="groupBy" name="groupBy" style="min-width:100%">
+                          <option value="date" selected="selected">Date Wise</option>
+                          <option value="program">Program Wise</option>
                           <option value="branch">Branch Wise</option>
                           <option value="mentorBranch">Mentor Branch Wise</option>
-                          <option value="program">Program Wise</option>
-                          <option value="person">Contacted Person Wise</option>
-                          <option value="medium" selected="selected">Contact Medium Wise</option>
-                          <option value="date">Date Wise</option>
                           <option value="user">User Wise</option>
+                          <option value="person">Contacted Person Wise</option>
                         </select>
                       </div>
                     </div>
@@ -8730,7 +8729,7 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                   </div>
                   </div>
                   </div>
-                  <div class="panel panel-primary">
+                  <div class="panel panel-primary" id="convReportPanel" style="display:none;">
                     <div class="panel-heading">
                       <h4 class="panel-title" id="convReportPanelTitle">
                         Summary Report
@@ -12497,7 +12496,7 @@ function DeselectSelectedOptionAdd(elem) {
                 // has entries has Mobile Call, WhatsApp and Telegram entries — not
                 // a random sparse mix that could leave a date missing a medium
                 // (important since Date From/To default to today only, and
-                // GroupBy defaults to Contact Medium Wise).
+                // GroupBy defaults to Date Wise).
                 var DAILY_COUNTS = [90, 45, 120, 60, 35, 105, 70];
                 var daysBack = DAILY_COUNTS.length;
                 var i = 0;
@@ -12615,21 +12614,14 @@ function DeselectSelectedOptionAdd(elem) {
                 return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
             }
 
-            // Every Summary row is also cross-tabbed against a second dimension
-            // (columns), each split into Total Call + Duration, matching the
-            // reference report layout. Contact Medium Wise cross-tabs by "যে
-            // নম্বরে কথা হয়েছে" instead of by medium again — crossing a
-            // dimension against itself would just be a diagonal of blanks.
+            // Every Summary row is also cross-tabbed against contact medium
+            // (columns: Mobile Call / WhatsApp / Telegram), matching the
+            // reference report layout.
             var CROSS_TAB_DIMENSIONS = {
                 medium: {
                     title: 'যে মাধ্যমে কথা হয়েছে',
                     categories: CONTACT_MEDIUMS.map(function (m) { return { key: m, label: CONTACT_MEDIUM_LABELS[m] }; }),
                     getValue: function (r) { return r.contactMedium; }
-                },
-                person: {
-                    title: 'যে নম্বরে কথা হয়েছে',
-                    categories: CONTACTED_PERSONS.map(function (p) { return { key: p, label: p }; }),
-                    getValue: function (r) { return r.contactedPerson; }
                 }
             };
 
@@ -12643,7 +12635,6 @@ function DeselectSelectedOptionAdd(elem) {
                 mentorBranch: { label: 'Branch', getValue: function (r) { return r.branch; }, crossTabKey: 'medium', mentorGrouped: true },
                 program: { label: 'Program', getValue: function (r) { return r.program; }, crossTabKey: 'medium' },
                 person: { label: 'যে নম্বরে কথা হয়েছে', getValue: function (r) { return r.contactedPerson; }, crossTabKey: 'medium' },
-                medium: { label: 'যে মাধ্যমে কথা হয়েছে', getValue: function (r) { return CONTACT_MEDIUM_LABELS[r.contactMedium]; }, crossTabKey: 'person' },
                 // getSortKey (optional): a properly-orderable value for the default
                 // sort and for clicking the "value" column header — needed for Date
                 // Wise since the display string ("2 Jul, 2026") would sort wrong
@@ -12745,8 +12736,8 @@ function DeselectSelectedOptionAdd(elem) {
 
                 var groups = {};
                 var order = [];
-                var grandCatCounts = {}, grandCatDurations = {};
-                categories.forEach(function (c) { grandCatCounts[c.key] = 0; grandCatDurations[c.key] = 0; });
+                var grandCatCounts = {};
+                categories.forEach(function (c) { grandCatCounts[c.key] = 0; });
                 var grandTotal = 0;
                 var grandTotalDuration = 0;
                 records.forEach(function (r) {
@@ -12754,19 +12745,17 @@ function DeselectSelectedOptionAdd(elem) {
                     var subValue = hasSub ? config.subGroup.getValue(r) : null;
                     var key = hasSub ? (value + String.fromCharCode(1) + subValue) : value;
                     if (!(key in groups)) {
-                        var catCounts = {}, catDurations = {};
-                        categories.forEach(function (c) { catCounts[c.key] = 0; catDurations[c.key] = 0; });
-                        groups[key] = { value: value, subValue: subValue, sortKey: config.getSortKey ? config.getSortKey(r) : value, catCounts: catCounts, catDurations: catDurations, totalCount: 0, totalDuration: 0 };
+                        var catCounts = {};
+                        categories.forEach(function (c) { catCounts[c.key] = 0; });
+                        groups[key] = { value: value, subValue: subValue, sortKey: config.getSortKey ? config.getSortKey(r) : value, catCounts: catCounts, totalCount: 0, totalDuration: 0 };
                         order.push(key);
                     }
                     var g = groups[key];
                     var catKey = crossTab.getValue(r);
                     g.catCounts[catKey]++;
-                    g.catDurations[catKey] += r.callDurationSec;
                     g.totalCount++;
                     g.totalDuration += r.callDurationSec;
                     grandCatCounts[catKey]++;
-                    grandCatDurations[catKey] += r.callDurationSec;
                     grandTotal++;
                     grandTotalDuration += r.callDurationSec;
                 });
@@ -12780,10 +12769,9 @@ function DeselectSelectedOptionAdd(elem) {
                     }
                     return 0;
                 });
-                // Per-category (e.g. "Mobile Call Total Call") sort keys are named
-                // cat<index>_count / cat<index>_duration since the category set
-                // varies by GroupBy (medium categories vs. person categories).
-                var catSortMatch = viewState.sortKey ? /^cat(\d+)_(count|duration)$/.exec(viewState.sortKey) : null;
+                // Per-category (e.g. "Mobile Call") sort keys are named cat<index>
+                // since the category set varies by GroupBy.
+                var catSortMatch = viewState.sortKey ? /^cat(\d+)$/.exec(viewState.sortKey) : null;
                 if (viewState.sortKey === 'count') {
                     order = sortValues(order, function (k) { return groups[k].totalCount; }, 'count');
                 } else if (viewState.sortKey === 'duration') {
@@ -12794,12 +12782,9 @@ function DeselectSelectedOptionAdd(elem) {
                     order = sortValues(order, function (k) { return groups[k].subValue; }, 'subvalue');
                 } else if (catSortMatch) {
                     var catIdx = parseInt(catSortMatch[1], 10);
-                    var catField = catSortMatch[2];
                     var sortCatKey = categories[catIdx] ? categories[catIdx].key : null;
                     if (sortCatKey) {
-                        order = sortValues(order, function (k) {
-                            return catField === 'count' ? groups[k].catCounts[sortCatKey] : groups[k].catDurations[sortCatKey];
-                        }, viewState.sortKey);
+                        order = sortValues(order, function (k) { return groups[k].catCounts[sortCatKey]; }, viewState.sortKey);
                     }
                 }
 
@@ -12827,15 +12812,14 @@ function DeselectSelectedOptionAdd(elem) {
                         var keys = byMentor[mentor];
                         mentorSectionStart[keys[0]] = mentor;
                         mentorSectionEnd[keys[keys.length - 1]] = mentor;
-                        var mt = { totalCount: 0, totalDuration: 0, catCounts: {}, catDurations: {} };
-                        categories.forEach(function (c) { mt.catCounts[c.key] = 0; mt.catDurations[c.key] = 0; });
+                        var mt = { totalCount: 0, totalDuration: 0, catCounts: {} };
+                        categories.forEach(function (c) { mt.catCounts[c.key] = 0; });
                         keys.forEach(function (key) {
                             var g = groups[key];
                             mt.totalCount += g.totalCount;
                             mt.totalDuration += g.totalDuration;
                             categories.forEach(function (c) {
                                 mt.catCounts[c.key] += g.catCounts[c.key];
-                                mt.catDurations[c.key] += g.catDurations[c.key];
                             });
                         });
                         mentorTotals[mentor] = mt;
@@ -12850,7 +12834,7 @@ function DeselectSelectedOptionAdd(elem) {
                 var startIdx = (viewState.page - 1) * perPage;
                 var pageKeys = order.slice(startIdx, startIdx + perPage);
                 var leadingCols = hasSub ? 3 : 2;
-                var totalCols = leadingCols + 2 + categories.length * 2;
+                var totalCols = leadingCols + 2 + categories.length;
 
                 var html = '<div class="table-responsive"><table class="table table-bordered table-striped" id="convSummaryTable">';
                 html += '<colgroup>';
@@ -12858,28 +12842,21 @@ function DeselectSelectedOptionAdd(elem) {
                 html += '<col style="width:220px">';
                 if (hasSub) html += '<col style="width:150px">';
                 html += '<col style="width:80px"><col style="width:80px">';
-                categories.forEach(function () { html += '<col style="width:80px"><col style="width:80px">'; });
+                categories.forEach(function () { html += '<col style="width:110px">'; });
                 html += '</colgroup>';
                 html += '<thead>';
                 html += '<tr>' +
-                    '<th rowspan="3" class="conv-id-col conv-id-first">Sl.</th>' +
-                    sortHeader(config.label, 'value', null, 3, 'conv-id-col') +
-                    (hasSub ? sortHeader(config.subGroup.label, 'subvalue', null, 3, 'conv-id-col') : '') +
-                    '<th colspan="2" rowspan="2" class="conv-id-col">Grand Total</th>' +
-                    '<th colspan="' + (categories.length * 2) + '" class="conv-detail-col conv-detail-first conv-detail-last">Details</th>' +
-                    '</tr>';
-                html += '<tr>';
+                    '<th rowspan="2" class="conv-id-col conv-id-first">Sl.</th>' +
+                    sortHeader(config.label, 'value', null, 2, 'conv-id-col') +
+                    (hasSub ? sortHeader(config.subGroup.label, 'subvalue', null, 2, 'conv-id-col') : '') +
+                    '<th colspan="2" class="conv-id-col">Grand Total</th>';
                 categories.forEach(function (c, idx) {
                     var edgeClass = idx === 0 ? ' conv-detail-first' : (idx === categories.length - 1 ? ' conv-detail-last' : '');
-                    html += '<th colspan="2" class="conv-detail-col' + edgeClass + '">' + c.label + '</th>';
+                    html += sortHeader(c.label, 'cat' + idx, null, 2, 'conv-detail-col' + edgeClass);
                 });
                 html += '</tr>';
                 html += '<tr>';
                 html += sortHeader('Call Count', 'count', null, null, 'conv-id-col') + sortHeader('Duration', 'duration', null, null, 'conv-id-col conv-id-last');
-                categories.forEach(function (c, idx) {
-                    html += sortHeader('Total Call', 'cat' + idx + '_count', null, null, 'conv-detail-col' + (idx === 0 ? ' conv-detail-first' : ''));
-                    html += sortHeader('Duration', 'cat' + idx + '_duration', null, null, 'conv-detail-col' + (idx === categories.length - 1 ? ' conv-detail-last' : ''));
-                });
                 html += '</tr>';
                 html += '</thead><tbody>';
 
@@ -12896,10 +12873,8 @@ function DeselectSelectedOptionAdd(elem) {
                         '<td class="conv-id-col conv-id-last">' + formatDuration(g.totalDuration) + '</td>';
                     categories.forEach(function (c, idx) {
                         var cnt = g.catCounts[c.key];
-                        var firstCls = idx === 0 ? ' conv-detail-first' : '';
-                        var lastCls = idx === categories.length - 1 ? ' conv-detail-last' : '';
-                        html += '<td class="conv-detail-col' + firstCls + '">' + drillLink(cnt, groupByKey, g.value, hasSub ? g.subValue : undefined, config.crossTabKey, c.key) + '</td>' +
-                            '<td class="conv-detail-col' + lastCls + '">' + (cnt ? formatDuration(g.catDurations[c.key]) : '-') + '</td>';
+                        var edgeCls = idx === 0 ? ' conv-detail-first' : (idx === categories.length - 1 ? ' conv-detail-last' : '');
+                        html += '<td class="conv-detail-col' + edgeCls + '">' + drillLink(cnt, groupByKey, g.value, hasSub ? g.subValue : undefined, config.crossTabKey, c.key) + '</td>';
                     });
                     html += '</tr>';
                     if (mentorSectionEnd[key]) {
@@ -12907,7 +12882,7 @@ function DeselectSelectedOptionAdd(elem) {
                         html += '<tr class="conv-mentor-total"><td colspan="' + leadingCols + '" style="text-align:right;"><strong>Mentor Total</strong></td>';
                         html += '<td><strong>' + mt.totalCount + '</strong></td><td><strong>' + formatDuration(mt.totalDuration) + '</strong></td>';
                         categories.forEach(function (c) {
-                            html += '<td><strong>' + mt.catCounts[c.key] + '</strong></td><td><strong>' + formatDuration(mt.catDurations[c.key]) + '</strong></td>';
+                            html += '<td><strong>' + mt.catCounts[c.key] + '</strong></td>';
                         });
                         html += '</tr>';
                     }
@@ -12917,10 +12892,8 @@ function DeselectSelectedOptionAdd(elem) {
                 html += '<td class="conv-id-col"><strong>' + grandTotal + '</strong></td>' +
                     '<td class="conv-id-col conv-id-last"><strong>' + formatDuration(grandTotalDuration) + '</strong></td>';
                 categories.forEach(function (c, idx) {
-                    var firstCls = idx === 0 ? ' conv-detail-first' : '';
-                    var lastCls = idx === categories.length - 1 ? ' conv-detail-last' : '';
-                    html += '<td class="conv-detail-col' + firstCls + '"><strong>' + grandCatCounts[c.key] + '</strong></td>' +
-                        '<td class="conv-detail-col' + lastCls + '"><strong>' + formatDuration(grandCatDurations[c.key]) + '</strong></td>';
+                    var edgeCls = idx === 0 ? ' conv-detail-first' : (idx === categories.length - 1 ? ' conv-detail-last' : '');
+                    html += '<td class="conv-detail-col' + edgeCls + '"><strong>' + grandCatCounts[c.key] + '</strong></td>';
                 });
                 html += '</tr>';
 
@@ -13008,6 +12981,7 @@ function DeselectSelectedOptionAdd(elem) {
             }
 
             function renderCurrentView() {
+                $('#convReportPanel').show();
                 $('#convReportPanelTitle').text(viewState.mode === 'details' ? 'Details Report' : 'Summary Report');
                 if (viewState.mode === 'details') {
                     renderDetailsView();
@@ -13130,8 +13104,8 @@ function DeselectSelectedOptionAdd(elem) {
                 renderCurrentView();
             });
 
-            // Show a first result set immediately so the page isn't blank on load.
-            loadReport();
+            // Data is not loaded on page open — the container stays empty until
+            // the user picks filters and clicks View.
         });
             </script>
 
@@ -13274,7 +13248,7 @@ function DeselectSelectedOptionAdd(elem) {
                     <p style="font-weight:bold; margin-bottom:4px;">ফিল্টার বার:</p>
                     <ol style="padding-left:20px; margin:0 0 20px;">
                       <li style="margin-bottom:10px;">
-                        <strong>GroupBy:</strong> Branch Wise / Mentor Branch Wise / Program Wise / Contacted Person Wise / Contact Medium Wise / Date Wise / User Wise, ডিফল্টভাবে Contact Medium Wise সিলেক্ট থাকবে।
+                        <strong>GroupBy:</strong> Date Wise / Program Wise / Branch Wise / Mentor Branch Wise / User Wise / Contacted Person Wise, ডিফল্টভাবে Date Wise সিলেক্ট থাকবে।
                       </li>
                       <li style="margin-bottom:10px;">
                         <strong>Organization, Program, Session, Branch</strong> — Organization একটাই সিলেক্ট করা যাবে, বাকি সবগুলো মাল্টি-সিলেক্ট, ডিফল্টে সবগুলোই।
@@ -13295,14 +13269,12 @@ function DeselectSelectedOptionAdd(elem) {
                         <strong>Display Per Page</strong> (ডিফল্টভাবে 10 থাকবে)।
                       </li>
                     </ol>
+                    <p style="margin:0 0 20px;">মেনু ওপেন করার সাথে সাথে নিচে কোনো টেবিল/প্যানেলই দেখাবে না — ইউজার ফিল্টার সিলেক্ট করে <strong>View</strong> বাটনে ক্লিক করলে তবেই "Summary Report"/"Details Report" প্যানেলটা দেখা যাবে।</p>
                     <p style="font-weight:bold; margin-bottom:4px;">রেজাল্ট ভিউ (Report Type অনুযায়ী, টেবিলের হেডারের শিরোনামও পাল্টাবে — "Summary Report" / "Details Report"):</p>
                     <p style="font-weight:bold; margin-bottom:4px;">Summary টেবিল:</p>
                     <ol style="padding-left:20px; margin:0 0 20px;">
                       <li style="margin-bottom:10px;">
-                        Sl., GroupBy ডাইমেনশন-এর ঠিক পরেই Grand Total (Call Count, Duration) কলাম দুটো, তারপর "Details" শিরোনামে আরেকটা ডাইমেনশন দিয়ে কলাম-ভাগ হবে (যে মাধ্যমে কথা হয়েছে: Mobile Call/WhatsApp/Telegram, প্রতিটায় Total Call + Duration সাব-কলাম)।
-                      </li>
-                      <li style="margin-bottom:10px;">
-                        <strong>ব্যতিক্রম:</strong> GroupBy তে Contact Medium Wise হলে কলাম-ভাগ "যে মাধ্যমে কথা হয়েছে" না হয়ে "যে নম্বরে কথা হয়েছে" দিয়ে হবে।
+                        Sl., GroupBy ডাইমেনশন-এর ঠিক পরেই Grand Total (Call Count, Duration) কলাম দুটো, তারপর ডান পাশে সবসময় তিনটি কলাম — <strong>Mobile Call / WhatsApp / Telegram</strong> (যে মাধ্যমে কথা হয়েছে অনুযায়ী কল-সংখ্যা, প্রতিটা একটাই কলাম — কোনো আলাদা Duration কলাম নেই)।
                       </li>
                       <li style="margin-bottom:10px;">
                         Grand Total বা Details ব্লকের যেকোনো সংখ্যায় ক্লিক করলে পুরো ভিউ Details-এ পাল্টে যাবে, শুধু সেই নির্দিষ্ট রো ও কলামে মিলে যাওয়া রেকর্ড দেখাবে। "← Summary-তে ফিরে যান" বাটনে ক্লিক করে আবার Summary টেবিলে ফেরা যাবে।
