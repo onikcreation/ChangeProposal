@@ -29132,11 +29132,30 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
             : demoStatusOnlyParam === 'call_received' ? ['Call Received']
             : null;
 
+        // Demo: every fabricated table on this page (single or per-panel) shows a
+        // plausible number of rows, even when the real drill-down count behind it
+        // is much smaller (e.g. a Conversation Call Report cell with just 1-2
+        // calls) — a near-empty table makes it hard to see the columns/design in
+        // the demo. Padded to a deterministically-randomized value within this
+        // range (per Tracking ID/Executed By key, so the same key always lands on
+        // the same padded value across re-renders) rather than one single fixed
+        // number — a flat "10" everywhere across many small counts looked
+        // artificial/repeated. Never shrinks a real count that's already plausible
+        // on its own. The "Total Data: N" header text always matches whatever was
+        // actually generated (this included), never the original small count.
+        var DEMO_PADDED_ROW_RANGE = [8, 13];
+        function demoPaddedRowCount(realCount, seedKey) {
+            var span = DEMO_PADDED_ROW_RANGE[1] - DEMO_PADDED_ROW_RANGE[0] + 1;
+            var target = DEMO_PADDED_ROW_RANGE[0] + (demoHashString(String(seedKey)) % span);
+            return Math.max(realCount, target);
+        }
+
         // Demo: total fake row count driven by a ?count=N query param (used when this
         // page is opened from another already-converted page's clickable totals),
         // defaulting to 25 when absent so the page still shows a plausible result set.
         var demoTotalCount = parseInt(new URLSearchParams(window.location.search).get('count'), 10);
         if (!demoTotalCount || demoTotalCount < 1) { demoTotalCount = 25; }
+        demoTotalCount = demoPaddedRowCount(demoTotalCount, 'demoTotalCount');
         window.demoTotalCount = demoTotalCount;
 
         // Demo: which team member(s) to attribute the fabricated rows' "Executed By" to —
@@ -29178,7 +29197,7 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
 
         // Demo: plausible row count for a Tracking ID typed directly into the box, which
         // has no known count from a Mentor Dashboard link.
-        function demoFakeCountForTrackingId() { return demoRandInt(3, 20); }
+        function demoFakeCountForTrackingId() { return demoRandInt(DEMO_PADDED_ROW_RANGE[0], 20); }
 
         // Demo: builds the per-Tracking-ID breakdown driving the multi-panel view from
         // whatever is currently in the Tracking ID box — same parsing whether that text
@@ -29416,29 +29435,21 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         // feedback/duration ones that require an actual conversation to have happened.
         // `forcedEntryBy` lets a caller pin every row to one specific name (used when a
         // panel is already scoped to one (Tracking ID, Executed By) pair).
-        // `weightedEntryByPairs` (array of { executedBy, count }) instead picks a name
-        // per row at random, weighted by each person's own count — used by
-        // renderPendingBreakdownTables' Tracking-ID-level generation, where a single
-        // batch of rows covers every contributing Executed By at once (see
-        // pickWeightedExecutedBy) and only the "Call Not Received" ones actually need a
-        // name (the "Not Called Yet" ones stay '-' either way, see below).
-        function pickWeightedExecutedBy(pairs) {
-            var totalWeight = pairs.reduce(function (s, p) { return s + p.count; }, 0);
-            var r = Math.random() * totalWeight;
-            for (var i = 0; i < pairs.length; i++) {
-                r -= pairs[i].count;
-                if (r <= 0) { return pairs[i].executedBy; }
-            }
-            return pairs[pairs.length - 1].executedBy;
-        }
-        function generateFakeReportRows(total, forcedEntryBy, weightedEntryByPairs) {
+        // `forcedStatus` lets a caller pin every row to one specific status instead of
+        // picking randomly from demoStatusPool/fakeStatuses — used by
+        // renderPendingBreakdownTables to generate the shared "Not Called Yet" table
+        // and each person's "Call Not Received" table as separate, homogeneous
+        // batches (rather than one mixed batch filtered apart afterward), so each
+        // one's row count can be set — and padded via demoPaddedRowCount — directly
+        // instead of emerging from chance.
+        function generateFakeReportRows(total, forcedEntryBy, forcedStatus) {
             var fixedDateOnly = !demoOnDateParam ? null
                 : (demoOnDateParam === 'Today') ? demoRealDateOnly()
                 : demoRealDateOnly(demoOnDateParam);
             var rows = [];
             for (var i = 1; i <= total; i++) {
                 var statusPool = demoStatusPool || fakeStatuses;
-                var rowStatus = statusPool[demoRandInt(0, statusPool.length - 1)];
+                var rowStatus = forcedStatus || statusPool[demoRandInt(0, statusPool.length - 1)];
                 var wasEntered = rowStatus !== 'Not Called Yet';
                 var wasConnected = rowStatus === 'Call Received';
                 var contactInfo = demoFakeContactedInfo(rowStatus);
@@ -29467,11 +29478,9 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                     remarks: remarks,
                     contactedNumber: contactInfo.number,
                     contactedMedium: contactInfo.medium,
-                    entryBy: !wasEntered ? '-' : (forcedEntryBy || (weightedEntryByPairs
-                        ? pickWeightedExecutedBy(weightedEntryByPairs)
-                        : (demoEntryByList
-                            ? demoEntryByList[(i - 1) % demoEntryByList.length]
-                            : fakeAgents[demoRandInt(0, fakeAgents.length - 1)]))),
+                    entryBy: !wasEntered ? '-' : (forcedEntryBy || (demoEntryByList
+                        ? demoEntryByList[(i - 1) % demoEntryByList.length]
+                        : fakeAgents[demoRandInt(0, fakeAgents.length - 1)])),
                     entryDateTime: moment ? moment.display : '-',
                     entryDateTimeSort: moment ? moment.sortValue : null,
                     mobileNumber: demoFakeMobile()
@@ -29974,11 +29983,12 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 var tableId = 'DataGrid_multi_' + i;
                 var collapseId = 'collapse_trid_' + i;
                 var titleSuffix = singleExecutedBy ? (' | Executed By: ' + singleExecutedBy) : '';
-                var rows = generateFakeReportRows(entry.count);
+                var effectiveCount = demoPaddedRowCount(entry.count, entry.trackingId);
+                var rows = generateFakeReportRows(effectiveCount);
                 var $block = $(
                     '<div class="panel panel-primary" style="margin-bottom:15px;">' +
                     '<div class="panel-heading" data-toggle="collapse" href="#' + collapseId + '" style="cursor:pointer;">' +
-                    '<h4 class="panel-title">Total Data: ' + entry.count + ' : Tracking ID: ' + entry.trackingId + titleSuffix +
+                    '<h4 class="panel-title">Total Data: ' + effectiveCount + ' : Tracking ID: ' + entry.trackingId + titleSuffix +
                     '<span style="float:right;"><i class="fa ' + (startExpanded ? 'fa-minus' : 'fa-plus') + '" aria-hidden="true"></i></span>' +
                     '</h4>' +
                     '</div>' +
@@ -30070,12 +30080,13 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
         // - One "Call Not Received" table per Executed By (an attempt WAS logged, so
         //   these do belong to a specific person) — same per-pair panel structure as
         //   before, just now homogeneous (only Call Not Received rows).
-        // Every row across the whole Tracking ID group is generated together in one
-        // batch (see generateFakeReportRows's weightedEntryByPairs) so the "Call Not
-        // Received" rows split across team members proportionally to their original
-        // pending share, then filtered apart by status/entryBy — rather than each pair
-        // generating its own independent batch, which is what used to force every row
-        // into looking like it belonged to one specific (Tracking ID, Executed By).
+        // The shared "Not Called Yet" table and each person's "Call Not Received"
+        // table are each generated as their own homogeneous batch (via
+        // generateFakeReportRows' forcedStatus) rather than one mixed batch filtered
+        // apart afterward — that way every individual table's row count can be set
+        // directly (roughly half the pair's original total for Not Called Yet, the
+        // pair's own count for Call Not Received) and padded via demoPaddedRowCount,
+        // instead of leaving each bucket's size to chance.
         function renderPendingBreakdownTables(breakdown) {
             var $container = $('#multiTrackingContainer').empty();
 
@@ -30089,8 +30100,10 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
             $.each(groupOrder, function (gi, trackingId) {
                 var pairs = groups[trackingId];
                 var totalCount = pairs.reduce(function (s, p) { return s + p.count; }, 0);
-                var allRows = generateFakeReportRows(totalCount, null, pairs);
-                var ncyRows = allRows.filter(function (r) { return r.status === 'Not Called Yet'; });
+                // Not Called Yet isn't attributable to any one contributing pair, so
+                // it's estimated as roughly half the group's combined pending count.
+                var ncyCount = demoPaddedRowCount(Math.round(totalCount / 2), trackingId + '_ncy');
+                var ncyRows = generateFakeReportRows(ncyCount, null, 'Not Called Yet');
 
                 var $group = $('<div style="margin-bottom:15px;"></div>').append(buildHeadContentHtml(trackingId));
                 $container.append($group);
@@ -30105,9 +30118,8 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 );
 
                 $.each(pairs, function (pi, pairEntry) {
-                    var personRows = allRows.filter(function (r) {
-                        return r.status === 'Call Not Received' && r.entryBy === pairEntry.executedBy;
-                    });
+                    var personCount = demoPaddedRowCount(pairEntry.count, pairEntry.trackingId + '_' + pairEntry.executedBy);
+                    var personRows = generateFakeReportRows(personCount, pairEntry.executedBy, 'Call Not Received');
                     appendPendingPanel(
                         $group, 'DataGrid_pb_cnr_' + gi + '_' + pi, 'collapse_pb_cnr_' + gi + '_' + pi,
                         'Total Data: ' + personRows.length + ' : Call Not Received Executed By: ' + pairEntry.executedBy,
@@ -30167,8 +30179,9 @@ e=s.defaults.fixedColumns;if(c||e)e=d.extend({},c,e),!1!==c&&new m(b,e)}});d.fn.
                 $.each(groups[groupKey], function (pi, entry) {
                     var tableId = 'DataGrid_eb_' + gi + '_' + pi;
                     var collapseId = 'collapse_eb_' + gi + '_' + pi;
-                    var rows = generateFakeReportRows(entry.count, entry.executedBy);
-                    var panelTitle = 'Total Data: ' + entry.count + ' : ' + (groupByExecutedBy
+                    var effectiveCount = demoPaddedRowCount(entry.count, entry.trackingId + '_' + entry.executedBy);
+                    var rows = generateFakeReportRows(effectiveCount, entry.executedBy);
+                    var panelTitle = 'Total Data: ' + effectiveCount + ' : ' + (groupByExecutedBy
                         ? 'Tracking ID: ' + entry.trackingId
                         : 'Executed By: ' + entry.executedBy);
                     // Pinwise's panels each need their own program-info block (omitted

@@ -8319,7 +8319,7 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                           <option value="program">Program Wise</option>
                           <option value="branch">Branch Wise</option>
                           <option value="mentorBranch">Mentor Branch Wise</option>
-                          <option value="user">User Wise</option>
+                          <option value="user">Executed By</option>
                           <option value="person">Contacted Person Wise</option>
                         </select>
                       </div>
@@ -8677,15 +8677,6 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                       </div>
                     </div>
                     <div class="form-group">
-                      <label class="control-label col-md-2" for="Report Type:">
-                        Report Type:
-                      </label>
-                      <div class="col-md-4">
-                        <select class="form-control" id="reportType" name="reportType" style="min-width:100%">
-                          <option value="summary" selected="selected">Summary</option>
-                          <option value="details">Details</option>
-                        </select>
-                      </div>
                       <label class="control-label col-md-2" for="Branch Mentor:">
                         Branch Mentor:
                       </label>
@@ -8707,13 +8698,22 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                           <option value="581">581 - Sana Ullah (Sana)</option>
                         </select>
                       </div>
-                    </div>
-                    <div class="form-group">
                       <label class="control-label col-md-2" for="Display Per Page:">
                         Display Per Page:
                       </label>
                       <div class="col-md-4">
                         <input type="number" class="form-control" id="displayPerPage" name="displayPerPage" value="10" min="10" step="10">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="control-label col-md-2" for="User Email:">
+                        User Email:
+                      </label>
+                      <div class="col-md-4">
+                        <input type="text" class="form-control" id="userEmailSearch" name="userEmailSearch" list="userEmailSearchList" placeholder="e.g. rahim.2201@udvash.net" autocomplete="off">
+                        <datalist id="userEmailSearchList">
+                          <!-- populated from ENTRY_BY_NAMES at page load -->
+                        </datalist>
                       </div>
                     </div>
                   <div class="form-group">
@@ -12445,6 +12445,10 @@ function DeselectSelectedOptionAdd(elem) {
             // index = that branch's staff member) — a real team member works out
             // of exactly one branch, so User Wise -> Branch is always 1-to-1.
             var ENTRY_BY_NAMES = ['rahim.2201@udvash.net', 'shirin.2213@udvash.net', 'imran.3324@udvash.net', 'nusrat.4471@udvash.net', 'tanjim.5582@udvash.net', 'karim.3350@unmesh.net', 'farhan.6693@unmesh.net', 'ruma.7789@onlinecare.net', 'mitu.7784@udvash.net', 'moin.8895@udvash.net', 'salman.9906@udvash.net', 'priya.1017@udvash.net'];
+            // Demo: powers the "User Email" search box's autocomplete suggestions.
+            ENTRY_BY_NAMES.forEach(function (email) {
+                $('#userEmailSearchList').append('<option value="' + email + '">');
+            });
             // Matches the value/text pairs used in the Session filter above — each
             // fake record is tagged with one of these so the filter has something
             // real to narrow down.
@@ -12456,15 +12460,6 @@ function DeselectSelectedOptionAdd(elem) {
 
             function pick(arr, seed) {
                 return arr[seed % arr.length];
-            }
-
-            function formatDateTime(d) {
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                var hours = d.getHours();
-                var ampm = hours >= 12 ? 'PM' : 'AM';
-                var h12 = hours % 12 || 12;
-                var mm = d.getMinutes() < 10 ? '0' + d.getMinutes() : d.getMinutes();
-                return d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear() + ' ' + h12 + ':' + mm + ' ' + ampm;
             }
 
             // Date-only (no time) — used by GroupBy: Date Wise, so every entry made
@@ -12577,6 +12572,7 @@ function DeselectSelectedOptionAdd(elem) {
                 var personVal = $('#contactedPerson').val();
                 var mediumVal = $('#contactMedium').val();
                 var mentorVal = $('#branchMentor').val();
+                var userEmailVal = $.trim($('#userEmailSearch').val() || '').toLowerCase();
 
                 var orgNameById = { '1': 'UDVASH', '2': 'UNMESH', '13': 'ONLINE CARE' };
 
@@ -12606,6 +12602,7 @@ function DeselectSelectedOptionAdd(elem) {
                     if (dateTo && formatIso(r.entryDate) > dateTo) return false;
                     if (personVal && personVal !== '0' && r.contactedPerson !== personVal) return false;
                     if (mediumVal && mediumVal !== '0' && r.contactMedium !== mediumVal) return false;
+                    if (userEmailVal && r.entryBy.toLowerCase().indexOf(userEmailVal) === -1) return false;
                     return true;
                 });
             }
@@ -12644,15 +12641,48 @@ function DeselectSelectedOptionAdd(elem) {
                 // User Wise also breaks each user's count down by Branch (a real
                 // team member only ever belongs to one branch) — subGroup adds
                 // that extra column between the main dimension and the cross-tab.
-                user: { label: 'User Name', getValue: function (r) { return r.entryBy; }, subGroup: { label: 'Branch', getValue: function (r) { return r.branch; } }, crossTabKey: 'medium' }
+                user: { label: 'Executed By', getValue: function (r) { return r.entryBy; }, subGroup: { label: 'Branch', getValue: function (r) { return r.branch; } }, crossTabKey: 'medium' }
             };
 
-            function drillLink(count, groupByKey, value, subValue, crossTabKey, crossTabValue) {
+            // Demo: groups the records behind one Summary cell into (Tracking ID,
+            // Executed By) pairs and builds the same "?eb=<trackingId>~<executedBy>~
+            // <count>,..." triple format Mentor Dashboard/Dashboard already use to
+            // drill into Details Report — reusing that exact mechanism instead of
+            // inventing a new one, since Details Report only needs a count per pair
+            // to fabricate its own rows, not the real records. "statusOnly=
+            // call_received" is added because every record here already IS a
+            // completed/received call by definition (this report is built entirely
+            // from "Call Received" entries). "groupBy=executedBy" (Pinwise) is only
+            // added for the User Wise dimension, where a row already is one specific
+            // team member — see the "pinwise" comment above in renderSummary.
+            function buildDetailsReportHref(matchedRecords, pinwise) {
+                var counts = {};
+                var order = [];
+                matchedRecords.forEach(function (r) {
+                    var key = r.trackingId + '|' + r.entryBy;
+                    if (!(key in counts)) {
+                        counts[key] = { trackingId: r.trackingId, executedBy: r.entryBy, count: 0 };
+                        order.push(key);
+                    }
+                    counts[key].count++;
+                });
+                var triples = order.map(function (key) {
+                    var c = counts[key];
+                    return c.trackingId + '~' + encodeURIComponent(c.executedBy) + '~' + c.count;
+                });
+                var href = '../DetailsReport/DetailsReport_Offline.html?statusOnly=call_received&eb=' + triples.join(',');
+                if (pinwise) href += '&groupBy=executedBy';
+                return href;
+            }
+
+            // Every clickable Summary number opens Details Report in a new tab
+            // (Programwise/Pinwise per "pinwise") — a real link, not an in-page view
+            // switch, since Report Type/inline Details was removed from this page.
+            function drillLink(matchedRecords, pinwise) {
+                var count = matchedRecords.length;
                 if (!count) return '-';
-                var attrs = 'data-group="' + groupByKey + '" data-value="' + $('<div>').text(value).html() + '"';
-                if (subValue !== undefined) attrs += ' data-subvalue="' + $('<div>').text(subValue).html() + '"';
-                if (crossTabKey !== undefined) attrs += ' data-crosstabkey="' + crossTabKey + '" data-crosstabvalue="' + $('<div>').text(crossTabValue).html() + '"';
-                return '<a href="javascript:void(0)" class="dashboard-drill-link conv-drill" ' + attrs + '>' + count + '</a>';
+                var href = buildDetailsReportHref(matchedRecords, pinwise);
+                return '<a href="' + href + '" target="_blank" rel="noopener" class="dashboard-drill-link">' + count + '</a>';
             }
 
             function getPerPage() {
@@ -12688,11 +12718,10 @@ function DeselectSelectedOptionAdd(elem) {
             }
 
             // Current view state — enough to re-render on a page-link/sort click
-            // without redoing the filters/grouping. "mode" is kept in sync with
-            // #reportType. sortKey/sortDir are reset whenever the view type changes
-            // (Summary and Details have different sortable columns).
+            // without redoing the filters/grouping. Report Type/inline Details view
+            // was removed (see loadReport) — this page only ever shows Summary now.
             var lastFilteredRecords = [];
-            var viewState = { mode: 'summary', page: 1, detailFilterFn: null, detailTitle: null, sortKey: null, sortDir: 'asc' };
+            var viewState = { page: 1, sortKey: 'count', sortDir: 'desc' };
 
             function sortHeader(label, key, colspan, rowspan, extraClass) {
                 var cls = 'conv-sortable' + (extraClass ? ' ' + extraClass : '');
@@ -12733,6 +12762,13 @@ function DeselectSelectedOptionAdd(elem) {
                 var hasSub = !!config.subGroup;
                 var crossTab = CROSS_TAB_DIMENSIONS[config.crossTabKey];
                 var categories = crossTab.categories;
+                // Decides Programwise vs Pinwise on the Details Report page a click
+                // lands on — "User Wise" is the only GroupBy dimension where a row IS
+                // one specific team member, mirroring Mentor Dashboard's Pinwise (one
+                // shared Executed By block, a panel per Tracking ID underneath). Every
+                // other dimension isn't person-specific, so it lands on Programwise
+                // (shared Tracking ID block, a panel per Executed By underneath).
+                var pinwise = groupByKey === 'user';
 
                 var groups = {};
                 var order = [];
@@ -12746,13 +12782,16 @@ function DeselectSelectedOptionAdd(elem) {
                     var key = hasSub ? (value + String.fromCharCode(1) + subValue) : value;
                     if (!(key in groups)) {
                         var catCounts = {};
-                        categories.forEach(function (c) { catCounts[c.key] = 0; });
-                        groups[key] = { value: value, subValue: subValue, sortKey: config.getSortKey ? config.getSortKey(r) : value, catCounts: catCounts, totalCount: 0, totalDuration: 0 };
+                        var catRecords = {};
+                        categories.forEach(function (c) { catCounts[c.key] = 0; catRecords[c.key] = []; });
+                        groups[key] = { value: value, subValue: subValue, sortKey: config.getSortKey ? config.getSortKey(r) : value, catCounts: catCounts, catRecords: catRecords, totalCount: 0, totalDuration: 0, records: [] };
                         order.push(key);
                     }
                     var g = groups[key];
                     var catKey = crossTab.getValue(r);
                     g.catCounts[catKey]++;
+                    g.catRecords[catKey].push(r);
+                    g.records.push(r);
                     g.totalCount++;
                     g.totalDuration += r.callDurationSec;
                     grandCatCounts[catKey]++;
@@ -12869,12 +12908,11 @@ function DeselectSelectedOptionAdd(elem) {
                         '<td class="conv-id-col conv-id-first">' + (startIdx + i + 1) + '</td>' +
                         '<td class="conv-dim-cell conv-id-col">' + g.value + '</td>' +
                         (hasSub ? '<td class="conv-id-col">' + g.subValue + '</td>' : '');
-                    html += '<td class="conv-id-col">' + drillLink(g.totalCount, groupByKey, g.value, hasSub ? g.subValue : undefined) + '</td>' +
+                    html += '<td class="conv-id-col">' + drillLink(g.records, pinwise) + '</td>' +
                         '<td class="conv-id-col conv-id-last">' + formatDuration(g.totalDuration) + '</td>';
                     categories.forEach(function (c, idx) {
-                        var cnt = g.catCounts[c.key];
                         var edgeCls = idx === 0 ? ' conv-detail-first' : (idx === categories.length - 1 ? ' conv-detail-last' : '');
-                        html += '<td class="conv-detail-col' + edgeCls + '">' + drillLink(cnt, groupByKey, g.value, hasSub ? g.subValue : undefined, config.crossTabKey, c.key) + '</td>';
+                        html += '<td class="conv-detail-col' + edgeCls + '">' + drillLink(g.catRecords[c.key], pinwise) + '</td>';
                     });
                     html += '</tr>';
                     if (mentorSectionEnd[key]) {
@@ -12903,110 +12941,25 @@ function DeselectSelectedOptionAdd(elem) {
                 $('#dashboardContainer').html(html);
             }
 
-            // getter functions for each sortable Details column, keyed the same as
-            // the data-sort attribute on that column's <th>.
-            var DETAIL_SORT_GETTERS = {
-                regNo: function (r) { return r.regNo; },
-                name: function (r) { return r.name; },
-                mobile: function (r) { return r.mobile; },
-                program: function (r) { return r.program; },
-                branch: function (r) { return r.branch; },
-                trackingId: function (r) { return r.trackingId; },
-                contactedPerson: function (r) { return r.contactedPerson; },
-                contactMedium: function (r) { return CONTACT_MEDIUM_LABELS[r.contactMedium]; },
-                callDuration: function (r) { return r.callDurationSec; },
-                entryBy: function (r) { return r.entryBy; },
-                entryDate: function (r) { return r.entryDate.getTime(); }
-            };
-
-            // Shared row-level table markup for the "Details" report type and for
-            // drilling into one Summary row — same columns either way, plus a
-            // leading Sl. column (numbered from the current page's offset).
-            function detailTableHtml(pageRecords, offset, titleHtml, totalCount) {
-                var html = '';
-                if (titleHtml) {
-                    html += '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">' +
-                        '<strong>' + titleHtml + ' (' + totalCount + 'টা রেকর্ড)</strong>' +
-                        '<button type="button" class="btn btn-xs btn-default" id="convBackToSummary">&larr; Summary-তে ফিরে যান</button>' +
-                        '</div>';
-                }
-                html += '<div class="table-responsive"><table class="table table-bordered table-striped" id="convDetailTable">' +
-                    '<thead><tr>' +
-                    '<th>Sl.</th>' +
-                    sortHeader('Registration No', 'regNo') + sortHeader('Student Name', 'name') +
-                    sortHeader('Mobile Number', 'mobile') + sortHeader('Program', 'program') +
-                    sortHeader('Branch', 'branch') + sortHeader('Tracking ID', 'trackingId') +
-                    sortHeader('যে নম্বরে কথা হয়েছে', 'contactedPerson') + sortHeader('যে মাধ্যমে কথা হয়েছে', 'contactMedium') +
-                    sortHeader('Call Duration', 'callDuration') +
-                    sortHeader('User Name', 'entryBy') + sortHeader('Entry Date-Time', 'entryDate') +
-                    '</tr></thead><tbody>';
-                pageRecords.forEach(function (r, i) {
-                    html += '<tr>' +
-                        '<td>' + (offset + i + 1) + '</td>' +
-                        '<td>' + r.regNo + '</td>' +
-                        '<td>' + r.name + '</td>' +
-                        '<td>' + r.mobile + '</td>' +
-                        '<td>' + r.program + '</td>' +
-                        '<td>' + r.branch + '</td>' +
-                        '<td>' + r.trackingId + '</td>' +
-                        '<td>' + r.contactedPerson + '</td>' +
-                        '<td>' + CONTACT_MEDIUM_LABELS[r.contactMedium] + '</td>' +
-                        '<td>' + formatDuration(r.callDurationSec) + '</td>' +
-                        '<td>' + r.entryBy + '</td>' +
-                        '<td>' + formatDateTime(r.entryDate) + '</td>' +
-                        '</tr>';
-                });
-                html += '</tbody></table></div>';
-                return html;
-            }
-
-            function renderDetailsView() {
-                var matched = viewState.detailFilterFn ? lastFilteredRecords.filter(viewState.detailFilterFn) : lastFilteredRecords;
-                if (matched.length === 0) {
-                    $('#dashboardContainer').html('<div class="alert alert-warning">কোনো ডাটা পাওয়া যায়নি — অন্য ফিল্টার দিয়ে আবার চেষ্টা করুন।</div>');
-                    return;
-                }
-                if (viewState.sortKey && DETAIL_SORT_GETTERS[viewState.sortKey]) {
-                    matched = sortValues(matched, DETAIL_SORT_GETTERS[viewState.sortKey], viewState.sortKey);
-                }
-                var perPage = getPerPage();
-                var totalPages = Math.max(1, Math.ceil(matched.length / perPage));
-                viewState.page = Math.min(Math.max(1, viewState.page), totalPages);
-                var startIdx = (viewState.page - 1) * perPage;
-                var pageRecords = matched.slice(startIdx, startIdx + perPage);
-
-                var html = detailTableHtml(pageRecords, startIdx, viewState.detailTitle, matched.length);
-                html += paginationHtml(matched.length, perPage, viewState.page, 'details');
-                $('#dashboardContainer').html(html).get(0).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-
             function renderCurrentView() {
                 $('#convReportPanel').show();
-                $('#convReportPanelTitle').text(viewState.mode === 'details' ? 'Details Report' : 'Summary Report');
-                if (viewState.mode === 'details') {
-                    renderDetailsView();
-                } else {
-                    renderSummary();
-                }
+                renderSummary();
             }
 
             function loadReport() {
+                // Demo: a User Email search is meant to show one specific team
+                // member's own data broken down by date — force GroupBy to Date
+                // Wise (and reflect that in the dropdown) regardless of whatever
+                // was already selected there.
+                if ($.trim($('#userEmailSearch').val() || '')) {
+                    $('#groupBy').val('date');
+                }
                 lastFilteredRecords = applyFilters();
-                viewState.mode = $('#reportType').val();
                 viewState.page = 1;
-                if (viewState.mode === 'details') {
-                    viewState.sortKey = null;
-                    viewState.sortDir = 'asc';
-                } else {
-                    // Summary always opens sorted by Grand Total Call Count,
-                    // highest first, so the busiest rows are immediately visible.
-                    viewState.sortKey = 'count';
-                    viewState.sortDir = 'desc';
-                }
-                if (viewState.mode !== 'details') {
-                    viewState.detailFilterFn = null;
-                    viewState.detailTitle = null;
-                }
+                // Summary always opens sorted by Grand Total Call Count, highest
+                // first, so the busiest rows are immediately visible.
+                viewState.sortKey = 'count';
+                viewState.sortDir = 'desc';
                 renderCurrentView();
             }
 
@@ -13038,41 +12991,9 @@ function DeselectSelectedOptionAdd(elem) {
                 document.body.removeChild(link);
             });
 
-            // Clicking a Summary count switches the whole view to Details, filtered
-            // to just that row's GroupBy value — not an inline expansion below the
-            // Summary table.
-            $(document).on('click', '.conv-drill', function (e) {
-                e.preventDefault();
-                var groupByKey = $(this).data('group');
-                var value = String($(this).data('value'));
-                var subValue = $(this).data('subvalue');
-                var crossTabKey = $(this).data('crosstabkey');
-                var crossTabValue = $(this).data('crosstabvalue');
-                var config = GROUP_BY_CONFIG[groupByKey];
-                $('#reportType').val('details');
-                viewState.mode = 'details';
-                viewState.page = 1;
-                viewState.sortKey = null;
-                viewState.sortDir = 'asc';
-
-                var filters = [function (r) { return config.getValue(r) === value; }];
-                var titleParts = [config.label + ': ' + value];
-                if (config.subGroup && subValue !== undefined) {
-                    subValue = String(subValue);
-                    filters.push(function (r) { return config.subGroup.getValue(r) === subValue; });
-                    titleParts.push(config.subGroup.label + ': ' + subValue);
-                }
-                if (crossTabKey !== undefined) {
-                    crossTabValue = String(crossTabValue);
-                    var ctDim = CROSS_TAB_DIMENSIONS[crossTabKey];
-                    filters.push(function (r) { return ctDim.getValue(r) === crossTabValue; });
-                    var cat = ctDim.categories.filter(function (c) { return c.key === crossTabValue; })[0];
-                    titleParts.push(ctDim.title + ': ' + (cat ? cat.label : crossTabValue));
-                }
-                viewState.detailFilterFn = function (r) { return filters.every(function (f) { return f(r); }); };
-                viewState.detailTitle = titleParts.join(', ');
-                renderCurrentView();
-            });
+            // Summary count cells are now real links straight to Details Report
+            // (see drillLink/buildDetailsReportHref) — no in-page click handler
+            // needed for them anymore.
 
             $(document).on('click', '.conv-sortable', function () {
                 var key = $(this).data('sort');
@@ -13083,17 +13004,6 @@ function DeselectSelectedOptionAdd(elem) {
                     viewState.sortDir = 'asc';
                 }
                 viewState.page = 1;
-                renderCurrentView();
-            });
-
-            $(document).on('click', '#convBackToSummary', function () {
-                $('#reportType').val('summary');
-                viewState.mode = 'summary';
-                viewState.page = 1;
-                viewState.sortKey = 'count';
-                viewState.sortDir = 'desc';
-                viewState.detailFilterFn = null;
-                viewState.detailTitle = null;
                 renderCurrentView();
             });
 
