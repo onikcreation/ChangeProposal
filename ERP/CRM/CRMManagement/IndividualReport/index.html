@@ -7894,10 +7894,9 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                   <i class="fa fa-bars">
                   </i>
                 </a>
-                <a class="navbar-brand" href="/" style="position: relative;">
-                  Demo
-                  <span style="position: absolute; left: 15px; bottom: 0; width: max-content; font-size: 12px;">
-                    Design
+                <a class="navbar-brand" href="javascript:void(0)" onclick="window.open('https://onikcreation.com/cp', '_blank')" title="cp হোমপেইজে যান" style="display:flex; align-items:center; height:50px; padding:0 15px;">
+                  <span style="display:inline-block; padding:6px 12px; line-height:1.2; text-align:center; border-radius:6px; background:#10B981; border:2px solid #fff; color:#fff; font-size:12.5px; font-weight:bold; white-space:nowrap;">
+                    Demo Design
                   </span>
                 </a>
                 <li class="blink">
@@ -25620,13 +25619,51 @@ function getDPI() {
             </script>
 
     <script type="text/javascript">
+      // Demo: same GitHub-Pages-compatible sibling-page URL used by the other
+      // converted CRM pages (Dashboard, Mentor Dashboard, Details Report,
+      // Conversation Entry, Manage Student Feedback, Conversation Call Report) —
+      // '../<folder>/<file>' for local file:// viewing, '../<folder>/' for
+      // GitHub Pages (served as index.html).
+      function siblingPageUrl(folder, offlineFileName) {
+        if (location.protocol === 'file:') {
+          return '../' + folder + '/' + offlineFileName;
+        }
+        return '../' + folder + '/';
+      }
+
+      // Demo: of the sidebar's 11 real submenu items, these 7 (including this page
+      // itself) have an offline demo built so far — the sidebar's hrefs above are
+      // still the real live-site routes baked into the captured markup, which
+      // would 404 on GitHub Pages (that route isn't a real static file there),
+      // whether followed via left-click, right-click "Open link in new tab", or
+      // middle-click. Rewrite every one of them to the correct sibling-page URL up
+      // front so every way of following the link lands correctly. The other 4
+      // items have nowhere to go yet and stay inert (blocked below).
+      var siblingLivePages = {
+        '/Student/CrmConversation/Dashboard': { folder: 'Dashboard', file: 'Dashboard_Offline.html' },
+        '/Student/CrmConversationTargetedStudent/ManageSingleEntry': { folder: 'ConversationEntry', file: 'CrmConversationEntry_Offline.html' },
+        '/Student/CrmReport/DetailsReport': { folder: 'DetailsReport', file: 'DetailsReport_Offline.html' },
+        '/Student/CrmReport/IndividualReport': { folder: 'IndividualReport', file: 'IndividualReport_Offline.html' },
+        '/Student/CrmComments/Index': { folder: 'ManageStudentFeedback', file: 'ManageStudentFeedback_Offline.html' },
+        '/Student/CrmConversation/MentorDashboard': { folder: 'MentorDashboard', file: 'MentorDashboard_Offline.html' },
+        '/Student/CrmReport/ConversationReport': { folder: 'ConversationCallReport', file: 'ConversationCallReport_Offline.html' }
+      };
+      Object.keys(siblingLivePages).forEach(function (route) {
+        var target = siblingLivePages[route];
+        document.querySelectorAll('a.submenuitem[href="' + route + '"]').forEach(function (a) {
+          a.setAttribute('href', siblingPageUrl(target.folder, target.file));
+        });
+      });
+
       // Demo: neutralize every remaining live-site link/form so nothing in this
-      // offline copy can navigate away to umsbd.net or submit to a live endpoint.
+      // offline copy can navigate away to umsbd.net or submit to a live endpoint —
+      // except the sidebar links to sibling demo pages (already rewritten to
+      // correct relative URLs above, so left as normal navigation).
       document.addEventListener('click', function (e) {
         var a = e.target.closest('a');
         if (!a) return;
         var href = a.getAttribute('href');
-        if (href && href !== '#' && !href.startsWith('#') && !href.startsWith('javascript:')) {
+        if (href && href !== '#' && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('../')) {
           e.preventDefault();
         }
       });

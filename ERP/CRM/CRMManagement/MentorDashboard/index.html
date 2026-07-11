@@ -13094,15 +13094,16 @@ function DeselectSelectedOptionAdd(elem) {
             </script>
             <script>
               // Sibling-page navigation for the left "CRM Management" sidebar menu —
-              // of its 12 real submenu items, only these 5 have an offline demo built
+              // of its 12 real submenu items, only these 7 have an offline demo built
               // so far; clicking one of them should actually navigate there (this
               // page's own entry just reloads), same as picking it on the live site.
-              // The other 7 items have nowhere to go yet and stay inert below.
+              // The other 5 items have nowhere to go yet and stay inert below.
               // (siblingPageUrl is already defined above for the drill-down links.)
               var siblingLivePages = {
                   '/Student/CrmConversation/Dashboard': { folder: 'Dashboard', file: 'Dashboard_Offline.html' },
                   '/Student/CrmConversationTargetedStudent/ManageSingleEntry': { folder: 'ConversationEntry', file: 'CrmConversationEntry_Offline.html' },
                   '/Student/CrmReport/DetailsReport': { folder: 'DetailsReport', file: 'DetailsReport_Offline.html' },
+                  '/Student/CrmReport/IndividualReport': { folder: 'IndividualReport', file: 'IndividualReport_Offline.html' },
                   '/Student/CrmComments/Index': { folder: 'ManageStudentFeedback', file: 'ManageStudentFeedback_Offline.html' },
                   '/Student/CrmConversation/MentorDashboard': { folder: 'MentorDashboard', file: 'MentorDashboard_Offline.html' },
                   '/Student/CrmReport/ConversationReport': { folder: 'ConversationCallReport', file: 'ConversationCallReport_Offline.html' }
