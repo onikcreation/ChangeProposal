@@ -8415,7 +8415,7 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                           Total Student
                         </th>
                         <th>
-                          Call Received
+                          Effective Call (CR)
                         </th>
                         <th>
                           Pending (NCY+CNR)
@@ -10971,8 +10971,11 @@ function getDPI() {
                   <li style="margin-bottom:12px;">
                     <strong>সংখ্যা ক্লিকেবল হবে: Total Student, Call Received, Pending (NCY+CNR)</strong> — তিনটা কলামের প্রতিটি সংখ্যা ক্লিকযোগ্য হবে, ক্লিক করা হলে Details Report-এ নিয়ে গিয়ে সংশ্লিষ্ট স্ট্যাটাস অনুযায়ি ডাটা দেখাবে (Total Student = সব স্ট্যাটাস, Call Received = শুধু Call Received, Pending (NCY+CNR) = শুধু Not Called Yet + Call Not Received)।
                   </li>
-                  <li>
+                  <li style="margin-bottom:12px;">
                     <strong>Entry বাটনে ক্লিক করা হলে প্রথমে Not Called Yet ডাটাগুলো ক্রমান্বয়ে একটির পর একটি আসবে।</strong> Not Called Yet শেষ হলে Call Not Received ডাটাগুলো আসবে।
+                  </li>
+                  <li>
+                    <strong>Call Received কলামের নাম বদলে "Effective Call (CR)" হয়েছে।</strong> (কলামের ভেতরের ডাটা/লজিক অপরিবর্তিত, শুধু নামটাই বদলেছে।)
                   </li>
                 </ol>
               </div>
