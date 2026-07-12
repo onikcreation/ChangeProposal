@@ -8237,7 +8237,7 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                       </div>
                     </div>
                   </div>
-                  <div id="dataTablePanel">
+                  <div id="dataTablePanel" style="display:none;">
                     <div class="panel panel-primary">
                       <div class="panel-heading">
                         <h4 class="panel-title">Details</h4>
@@ -12671,6 +12671,7 @@ var srBranches = ["Barishal Unmesh","Basabo Unmesh","Bhaluka Udvash","Bogura Col
       });
 
       $('#btnView').on('click', function () {
+        $('#dataTablePanel').show();
         srRenderTable($('#ReportType').val(), true);
       });
       // export-btn intentionally left inert — no captured real Export target to
@@ -12729,8 +12730,8 @@ var srBranches = ["Barishal Unmesh","Basabo Unmesh","Bhaluka Udvash","Bogura Col
 
         // Demo: real page's initial load already shows a Details result set (per the
         // capture) — Date From/To stay blank until the user picks one, matching the
-        // live site's default state.
-        srRenderTable('10', true);
+        // live site's default state. The Details table itself only appears after
+        // the user clicks Submit (matches live site's behavior).
 
         $('#ReportType').on('change', function () { /* takes effect on next Submit */ });
 
