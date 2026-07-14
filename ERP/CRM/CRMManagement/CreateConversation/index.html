@@ -7911,6 +7911,35 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
         font-weight:bold;
     }
                 </style>
+                <style>
+                    #pageChangesBtn {
+                        display: inline-block;
+                        position: absolute;
+                        left: 50%;
+                        top: 11px;
+                        transform: translateX(-50%);
+                        padding: 6px 12px;
+                        line-height: 1.2;
+                        text-align: center;
+                        border-radius: 6px;
+                        background: #F59E0B;
+                        border: 2px solid #fff;
+                        color: #fff !important;
+                        font-size: 12.5px;
+                        font-weight: bold;
+                        white-space: nowrap;
+                        z-index: 1031;
+                        animation: pageChangesPulse 1.6s infinite;
+                    }
+                    @keyframes pageChangesPulse {
+                        0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .7); }
+                        70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+                        100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                    }
+                </style>
+                <a href="javascript:void(0)" id="pageChangesBtn" data-toggle="modal" data-target="#pageChangesModal" title="এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে">
+                  New Updates
+                </a>
                 <form action="javascript:void(0)" onsubmit="return false;" class="navbar-right" id="logoutForm" method="post">
                   <ul class="nav navbar-nav navbar-right">
                     <li class="blink">
@@ -8418,6 +8447,7 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                                 <option value="1">Student List</option>
                                 <option value="2">Visited Student</option>
                                 <option value="3">Excel Sheet</option>
+                                <option value="4">Registration No. Wise</option>
                               </select>
                             </div>
                           </div>
@@ -8505,6 +8535,15 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                                   <option value="A">Column A</option>
                                   <option value="B">Column B</option>
                                 </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="regno-wise-section mb-2" style="display:none;">
+                            <div class="row mb-2">
+                              <label class="col-md-2 control-label text-right">Registration No(s).</label>
+                              <div class="col-md-10">
+                                <textarea class="form-control" id="regNoWiseInput" rows="4" placeholder="রেজিস্ট্রেশন/রোল নম্বর অবশ্যই কমা বা স্পেস দিয়ে আলাদা লিখতে হবে।"></textarea>
                               </div>
                             </div>
                           </div>
@@ -8632,6 +8671,78 @@ u[o]&&(delete u[o],c?delete n[l]:typeof n.removeAttribute!==i?n.removeAttribute(
                     </div>
                   </div>
                 </div>
+
+                <style>
+                  @media screen and (min-width: 768px) {
+                    #pageChangesModal .modal-dialog {
+                      width: 60%;
+                    }
+                  }
+                </style>
+                <div class="modal fade" id="pageChangesModal" tabindex="-1" role="dialog" aria-labelledby="pageChangesModalLabel">
+                  <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header" style="background:#4338CA; color:#fff; border-top-left-radius:4px; border-top-right-radius:4px;">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#fff; opacity:.85; text-shadow:none;"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="pcm-copy-btn" title="সম্পূর্ণ কনটেন্ট কপি করুন" style="float:right; margin:-2px 8px 0 0; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.5); color:#fff; border-radius:4px; padding:2px 10px; font-size:12px; line-height:1.6; cursor:pointer;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align:-1px; margin-right:4px;"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>Copy</button>
+                        <h4 class="modal-title" id="pageChangesModalLabel">এই পেইজে যা যা পরিবর্তন/আপডেট করা হয়েছে</h4>
+                      </div>
+                      <div class="modal-body" style="height:65vh; overflow-y:auto;">
+                        <p style="font-weight:bold; margin-bottom:12px;">নতুন আপডেট:</p>
+                        <ol style="padding-left:20px; margin:0;">
+                          <li style="margin-bottom:16px;">
+                            <strong>Conversation Type = New Admission বা Due Collection হলে Targeted Students-এ শিক্ষার্থী ফিল্টার করে Add করার লজিক অনুযায়ি শিক্ষার্থী যোগ করতে হবে।</strong>
+                            <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> CRM-এ নতুন Conversation তৈরির সময় Excel থেকে শিক্ষার্থী Add করার ক্ষেত্রে নিচের Logic যোগ করতে হবে, Conversation Type যদি: 🔹 New Admission অথবা 🔹 Due Collection হয়, তাহলে সরাসরি সকল শিক্ষার্থী Add না করে Manage Conversation Type-এর সেটিংস অনুযায়ী শিক্ষার্থী ফিল্টার করে Add করতে হবে।</p>
+                          </li>
+                          <li>
+                            <strong>Create Conversation ও Manage Conversation মেনুতে Registration Number দিয়ে সরাসরি শিক্ষার্থী Add করার ফিচার যোগ করতে হবে।</strong>
+                            <p style="margin:4px 0 0; color:#555;"><em>যেভাবে কাজ করবে:</em> CRM-এ Create Conversation ও Manage Conversation মেনুতে Community গ্রুপের মতো এক বা একাধিক Registration Number সরাসরি ইনপুট করে শিক্ষার্থী Add করার ফিচার যোগ করতে হবে। Create Conversation মেনুতে Targeted Students সেকশনে Add Students বাটনে ক্লিক করা হলে যে পপ আপ আসে তাতে Add Student From ফিল্টারে Registration No. Wise নতুন অপশন যোগ করতে হবে। এটি সিলেক্ট করা হলে সেই অনুযায়ি নিচে একটি টেক্সট বক্স দেখাবে, যাতে একটা বা একাধিক রেজি নম্বর কমা বা স্পেস দিয়ে সেপারেট করে ইনপুট করার পর সাবমিট বাটনে ক্লিক করা হলে Targeted Students টেবিলে ঐ শিক্ষার্থীগুলো যোগ হবে।</p>
+                          </li>
+                        </ol>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">বন্ধ করুন</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <script>
+                  function pcmFeedback(btn, label) {
+                      var original = btn.innerHTML;
+                      btn.innerHTML = label;
+                      setTimeout(function () { btn.innerHTML = original; }, 1800);
+                  }
+                  function pcmSelectionFallbackCopy(btn, modalBody) {
+                      try {
+                          var range = document.createRange();
+                          range.selectNodeContents(modalBody);
+                          var sel = window.getSelection();
+                          sel.removeAllRanges();
+                          sel.addRange(range);
+                          var ok = document.execCommand('copy');
+                          sel.removeAllRanges();
+                          pcmFeedback(btn, ok ? 'Copied!' : 'সিলেক্ট হয়েছে, Ctrl+C চাপুন');
+                      } catch (err) {
+                          pcmFeedback(btn, 'কপি ব্যর্থ হয়েছে');
+                      }
+                  }
+                  document.addEventListener('click', function (e) {
+                      var btn = e.target.closest('.pcm-copy-btn');
+                      if (!btn) return;
+                      var modalBody = btn.closest('.modal-content').querySelector('.modal-body');
+                      if (!modalBody) return;
+                      var text = modalBody.innerText || modalBody.textContent || '';
+                      if (navigator.clipboard && navigator.clipboard.writeText) {
+                          navigator.clipboard.writeText(text).then(function () {
+                              pcmFeedback(btn, 'Copied!');
+                          }).catch(function () {
+                              pcmSelectionFallbackCopy(btn, modalBody);
+                          });
+                      } else {
+                          pcmSelectionFallbackCopy(btn, modalBody);
+                      }
+                  });
+                </script>
 
             <div class="container body-content">
                                                     <hr>
@@ -12821,6 +12932,28 @@ function DeselectSelectedOptionAdd(elem) {
         var ccStudentRows = [];
         var ccStudentRowSeq = 0;
 
+        // Manage Conversation Type পেইজে কনফিগার করা সেটিংস (AdmissionStatusId/DueStatusId) - এখানে সেই একই মান রাখা হয়েছে,
+        // যাতে New Admission/Due Collection টাইপের জন্য "Student List" থেকে যোগ করার সময় সেই সেটিংস অনুযায়ী ফিল্টার প্রয়োগ হয়।
+        var ccConversationTypeFilterSettings = {
+          '1': { admissionStatusId: '20', dueStatusId: '' },
+          '2': { admissionStatusId: '', dueStatusId: '' }
+        };
+        var ccAdmissionStatusLabels = { '10': 'Admitted', '20': 'Not Admitted' };
+        var ccDueStatusLabels = { '10': 'Has Due', '20': 'Not Due' };
+
+        function ccGetActiveFilter() {
+          var ctVal = $('#ConversationType').val();
+          var settings = ccConversationTypeFilterSettings[ctVal];
+          if (!settings) return null;
+          if (ctVal === '1' && settings.admissionStatusId) {
+            return { field: 'Admission Status', label: ccAdmissionStatusLabels[settings.admissionStatusId] || settings.admissionStatusId };
+          }
+          if (ctVal === '2' && settings.dueStatusId) {
+            return { field: 'Due Status', label: ccDueStatusLabels[settings.dueStatusId] || settings.dueStatusId };
+          }
+          return null;
+        }
+
         function ccBuildStudentListRowHtml(rowId) {
           return '<tr data-row-id="' + rowId + '">' +
             '<td><select class="form-control student-list-organization"><option value="">Select Organization</option>' +
@@ -12906,6 +13039,7 @@ function DeselectSelectedOptionAdd(elem) {
           $('#addStudentFrom').val('1').trigger('change');
           $('#VisitedProgramId').html('<option value="">Select Program</option>');
           $('#VisitedSessionId').html('<option value="">Select Session</option>');
+          $('#regNoWiseInput').val('');
           $('#addStudentErrorMessage').text('');
         }
 
@@ -12936,6 +13070,7 @@ function DeselectSelectedOptionAdd(elem) {
           $('.student-list-section').toggle(val === '1');
           $('.visited-student-section').toggle(val === '2');
           $('.excel-sheet-section').toggle(val === '3');
+          $('.regno-wise-section').toggle(val === '4');
         });
 
         $('#btnTargetedStudentsModalAdd').on('click', function () {
@@ -12945,6 +13080,7 @@ function DeselectSelectedOptionAdd(elem) {
             var rows = $('#studentListRows tr');
             var valid = true;
             var toAdd = [];
+            var activeFilter = ccGetActiveFilter();
             rows.each(function () {
               var $row = $(this);
               var org = $row.find('.student-list-organization option:selected').text();
@@ -12956,12 +13092,19 @@ function DeselectSelectedOptionAdd(elem) {
               var branches = ($row.find('.student-list-branch').val() || []);
               var gender = $row.find('.student-list-gender option:selected').text();
               var seed = orgVal + '|' + program + '|' + session + '|' + (courses.join(',')) + '|' + (branches.join(','));
+              var rowTotal = ccFakeCount(seed, 15, 220);
+              var rowImportFrom = 'Student List';
+              if (activeFilter) {
+                // ফিল্টার প্রয়োগ হলে সরাসরি সব শিক্ষার্থী না যোগ করে, শর্ত পূরণকারী অংশটুকুই (প্লজিবল অনুপাতে) যোগ করা হয়
+                rowTotal = Math.max(1, Math.round(rowTotal * (ccHashString(seed + '|filter') % 30 + 25) / 100));
+                rowImportFrom = 'Student List (Filter: ' + activeFilter.label + ')';
+              }
               toAdd.push({
                 organization: org, program: program, session: session,
                 course: courses.length ? courses.join(', ') : 'All',
                 branch: branches.length ? branches.join(', ') : 'All',
-                gender: gender, importFrom: 'Student List',
-                total: ccFakeCount(seed, 15, 220)
+                gender: gender, importFrom: rowImportFrom,
+                total: rowTotal
               });
             });
             if (!valid || !toAdd.length) { $('#addStudentErrorMessage').text('Please select Organization for every row.'); return; }
@@ -12981,7 +13124,7 @@ function DeselectSelectedOptionAdd(elem) {
               gender: vGender, importFrom: 'Visited Student',
               total: ccFakeCount(seed2, 10, 120)
             });
-          } else {
+          } else if (mode === '3') {
             var sheet = $('#xlSheetNo').val();
             var col = $('#xlRegVisId').val();
             if (!sheet || !col) { $('#addStudentErrorMessage').text('Please select Sheet and Reg./Visited ID column.'); return; }
@@ -12990,6 +13133,15 @@ function DeselectSelectedOptionAdd(elem) {
               organization: '-', program: '-', session: '-', course: '-', branch: '-',
               gender: '-', importFrom: 'Excel Sheet',
               total: ccFakeCount(seed3, 5, 80)
+            });
+          } else {
+            var regNos = ($('#regNoWiseInput').val() || '').split(/[\s,;]+/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length; });
+            var uniqueRegNos = regNos.filter(function (v, i) { return regNos.indexOf(v) === i; });
+            if (!uniqueRegNos.length) { $('#addStudentErrorMessage').text('অন্তত একটি Registration No. লিখুন।'); return; }
+            ccStudentRows.push({
+              organization: '-', program: '-', session: '-', course: '-', branch: '-',
+              gender: '-', importFrom: 'Registration No',
+              total: uniqueRegNos.length
             });
           }
           ccRenderStudentTable();
