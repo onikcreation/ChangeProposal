@@ -25249,6 +25249,10 @@ function getDPI() {
                   '-'
               ];
               var fakeAgents = ['[2001] Shakil Ahmed', '[2002] Md. Tariful Islam', '[2003] Abdullah Al Mamun', '[2004] Md. Shamsul Alam', '[2005] Tushar Imran', '[2006] Nayeem Hasan', '[2007] Rakibul Hasan', '[2008] Sabbir Ahmed'];
+              // Same convention as Conversation Entry/Conversation Call Report - who was
+              // contacted and through which medium (only meaningful for a connected call).
+              var fakeContactedPersons = ['Student', 'Father', 'Mother'];
+              var fakeContactMediums = ['Mobile Call', 'WhatsApp', 'Telegram'];
               // Demo: per-Tracking-ID program/organization info shown in the
               // Conversation Details drill-down (see demoRecordDetailsHtml) — matches
               // the live "Details" view's org/program/session header block.
@@ -25312,6 +25316,8 @@ function getDPI() {
                       duration: wasConnected ? demoFakeDurationMMSS() : '-',
                       remarks: wasConnected ? demoPick(fakeRemarksLong) : '-',
                       customEntryField: '-',
+                      contactedPerson: wasConnected ? demoPick(fakeContactedPersons) : '-',
+                      contactMedium: wasConnected ? demoPick(fakeContactMediums) : '-',
                       entryBy: wasConnected ? demoPick(fakeAgents) : '-',
                       entryDateTime: wasConnected ? demoFakeEntryDateTime() : '-',
                       mobileNumber: demoFakeMobile(),
@@ -25415,6 +25421,8 @@ function getDPI() {
                           '<td>' + r.duration + '</td>' +
                           '<td>' + r.remarks + '</td>' +
                           '<td style="text-align: left;">' + r.customEntryField + '</td>' +
+                          '<td>' + r.contactedPerson + '</td>' +
+                          '<td>' + r.contactMedium + '</td>' +
                           '<td>' + r.entryBy + '</td>' +
                           '<td>' + r.entryDateTime + '</td>' +
                           '<td>' + r.mobileNumber + '</td>' +
@@ -25431,6 +25439,7 @@ function getDPI() {
                       '<th style="min-width:200px;">Conversation Type</th><th style="min-width:100px;">Status</th>' +
                       '<th style="min-width:200px;">Student Feedback</th><th>Conversation Duration</th>' +
                       '<th style="min-width:200px;">Remarks</th><th style="min-width:250px;">Custom Entry Field</th>' +
+                      '<th style="min-width:150px;">যে নম্বরে কথা হয়েছে</th><th style="min-width:150px;">যে মাধ্যমে কথা হয়েছে</th>' +
                       '<th style="min-width:150px;">Executed By</th><th style="min-width:200px;">Entry Date &amp; Time</th>' +
                       '<th style="min-width:150px;">Mobile Number</th>' +
                       '</tr></thead>' +
@@ -25479,6 +25488,7 @@ function getDPI() {
                       '<thead class="table-light"><tr>' +
                       '<th>Serial</th><th style="min-width:150px;">Status</th><th style="min-width:200px;">Student Feedback</th>' +
                       '<th>Conversation Duration</th><th style="min-width:200px;">Remarks</th>' +
+                      '<th style="min-width:150px;">যে নম্বরে কথা হয়েছে</th><th style="min-width:150px;">যে মাধ্যমে কথা হয়েছে</th>' +
                       '<th style="min-width:150px;">Executed By</th><th style="min-width:200px;">Entry Date &amp; Time</th>' +
                       '<th style="min-width:150px;">Mobile Number</th>' +
                       '</tr></thead>' +
@@ -25491,6 +25501,8 @@ function getDPI() {
                       '<td>' + row.studentFeedback + '</td>' +
                       '<td>' + row.duration + '</td>' +
                       '<td>' + row.remarks + '</td>' +
+                      '<td>' + row.contactedPerson + '</td>' +
+                      '<td>' + row.contactMedium + '</td>' +
                       '<td>' + row.entryBy + '</td>' +
                       '<td>' + row.entryDateTime + '</td>' +
                       '<td>' + row.mobileNumber + '</td>' +
@@ -25725,6 +25737,12 @@ function getDPI() {
               <div class="modal-body" style="height:65vh; overflow-y:auto;">
                 <p style="font-weight:bold; margin-bottom:12px;">নতুন আপডেট:</p>
                 <ol style="padding-left:20px; margin:0;">
+                  <li style="margin-bottom:12px;">
+                    <strong>Report Type: Details দিয়ে সাবমিট করলে যে ডাটাটেবিল পাওয়া যায়, সেখানে "যে নম্বরে কথা হয়েছে" ও "যে মাধ্যমে কথা হয়েছে" — নতুন দুটো কলাম যোগ করা হয়েছে</strong> ("Custom Entry Field"-এর পরে, "Executed By"-এর ঠিক আগে) — Conversation Entry পেইজ থেকে সেভ হওয়া এই দুটো ফিল্ড এখন এখানেও দেখা যাবে।
+                  </li>
+                  <li style="margin-bottom:12px;">
+                    <strong>Report Type: Summary দিয়ে সাবমিট করলে যে ডাটাটেবিল পাওয়া যায়, তার "Details" বাটনে ক্লিক করলে যে টেবিল দেখা যায়, সেখানেও "যে নম্বরে কথা হয়েছে" ও "যে মাধ্যমে কথা হয়েছে" — নতুন দুটো কলাম যোগ করা হয়েছে</strong> ("Remarks"-এর পরে, "Executed By"-এর ঠিক আগে)।
+                  </li>
                   <li style="margin-bottom:12px;">
                     <strong>Report Type: Details দিয়ে সাবমিট করলে যে ডাটাটেবিল পাওয়া যায়, তার "Entry By" কলামের নাম পরিবর্তন করে "Executed By" করা হয়েছে।</strong>
                   </li>
