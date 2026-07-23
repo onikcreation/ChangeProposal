@@ -17850,9 +17850,6 @@ span.hide-native-select{position:relative}span.hide-native-select select{border:
                                   <option selected="selected" value="-1">
                                     Last Session
                                   </option>
-                                  <option value="0">
-                                    All Session
-                                  </option>
                                   <option value="70">
                                     2027
                                   </option>
@@ -57365,8 +57362,8 @@ function DeselectSelectedOptionAdd(elem) {
                 includeSelectAllOption: false,
                 // The plugin's own internal "select all" checkbox defaults to value 0
                 // and, when an option in the underlying <select> happens to share that
-                // same value (e.g. this page's own "All Program"/"All Session"
-                // placeholder options, both value="0"), it gets misidentified as that
+                // same value (e.g. this page's own "All Program" placeholder option,
+                // value="0"), it gets misidentified as that
                 // internal control and silently dropped from the rendered checkbox list
                 // - the option still exists in the <select> but the user has no visible
                 // way to click it. Pointing selectAllValue at a sentinel no real option
@@ -57453,17 +57450,17 @@ function DeselectSelectedOptionAdd(elem) {
             $('#programIds').multiselect('rebuild');
         }
 
-        // #sessionIds is a multi-select with two placeholder options - "All Session"
-        // (value 0) and "Last Session" (value -1) - alongside the real year options.
-        // Neither placeholder narrows anything by itself, so this returns only the
-        // real, explicit session years the user actually checked (their display
-        // text, e.g. "2026") - an empty array means "no restriction" (either nothing
-        // is checked, or only a placeholder is).
+        // #sessionIds is a multi-select with one placeholder option - "Last Session"
+        // (value -1) - alongside the real year options (no "All Session" option;
+        // leaving everything unchecked serves that same "no restriction" purpose).
+        // This returns only the real, explicit session years the user actually
+        // checked (their display text, e.g. "2026") - an empty array means "no
+        // restriction" (either nothing is checked, or only "Last Session" is).
         function getSelectedSessionTexts() {
             var texts = [];
             $('#sessionIds option:selected').each(function () {
                 var v = String($(this).val());
-                if (v === '0' || v === '-1') return;
+                if (v === '-1') return;
                 texts.push($(this).text().trim());
             });
             return texts;
@@ -57539,7 +57536,7 @@ function DeselectSelectedOptionAdd(elem) {
             muliselectfnc($('#classFilter'), "All Class", { includeSelectAllOption: true });
             $('#classFilter').multiselect('deselectAll', false);
             $('#classFilter').multiselect('select', 'Admission');
-            muliselectfnc($('#sessionIds'), "All Session");
+            muliselectfnc($('#sessionIds'), "Select Session");
             rebuildProgramOptions();
             muliselectfnc($('#branchFilter'), "All Branch");
             muliselectfnc($('#boardFilter'), "All Examination");
@@ -57561,7 +57558,7 @@ function DeselectSelectedOptionAdd(elem) {
                 rebuildProgramOptions();
 
                 $('#sessionIds').empty();
-                $('#sessionIds').append($('<option>').text("All Session").attr('value', 0));
+                $('#sessionIds').append($('<option>').text("Last Session").attr('value', -1).prop('selected', true));
                 $('#sessionIds').multiselect('rebuild');
                 prevSessionSelection = $('#sessionIds').val() || [];
 
@@ -58919,12 +58916,12 @@ function DeselectSelectedOptionAdd(elem) {
                                       // Picks a real Session for a program (Program Wise's and Branch Program
                                       // Wise's Session column), read straight from the COURSE_DATA rows captured
                                       // for that program in Course Name.xlsx. #sessionIds is a multi-select with
-                                      // "All Session"/"Last Session" placeholders alongside real years (see
+                                      // a "Last Session" placeholder alongside real years (see
                                       // getSelectedSessionTexts()). If one or more specific years are checked,
                                       // the first one this program actually has data under is used - "-" if none
                                       // of them match. If only "Last Session" is checked (no specific year), the
-                                      // program's own most recent real session is used. Otherwise ("All Session"
-                                      // or nothing checked) falls back to a random one of the program's real
+                                      // program's own most recent real session is used. Otherwise (nothing
+                                      // checked) falls back to a random one of the program's real
                                       // sessions, for variety across sub-rows. Falls back to "" for a name not
                                       // in that sheet (e.g. the "Sample Program" placeholder above).
                                       function getSessionForProgram(name) {
@@ -59208,7 +59205,7 @@ function DeselectSelectedOptionAdd(elem) {
                                               </li>
                                               <li style="margin-top:12px;">
                                                 <strong>ফিল্টার অপশন</strong>
-                                                <p style="margin:4px 0 0; color:#555;">Organization (মাল্টি সিলেক্ট) → Class (মাল্টি সিলেক্ট, Select All অপশনসহ, ডিফল্ট Admission সিলেক্টেড) → Program Type (All/Paid/Free, ডিফল্ট Paid) (সিঙ্গেল-সিলেক্ট) → Program (মাল্টি সিলেক্ট) → Session (মাল্টি সিলেক্ট, শুরুতে "Last Session" অপশন থাকে যেটা ডিফল্টে সিলেক্টেড) → Course (মাল্টি সিলেক্ট) → Branch Mentor (সিঙ্গেল-সিলেক্ট) → Branch (মাল্টি সিলেক্ট) → Name of Examination (SSC/HSC) (মাল্টি সিলেক্ট) → Report Type (৫টি ভিউ)।</p>
+                                                <p style="margin:4px 0 0; color:#555;">Organization (সিঙ্গেল-সিলেক্ট) → Class (মাল্টি সিলেক্ট, Select All অপশনসহ, ডিফল্ট Admission সিলেক্টেড) → Program Type (All/Paid/Free, ডিফল্ট Paid) (সিঙ্গেল-সিলেক্ট) → Program (মাল্টি সিলেক্ট) → Session (মাল্টি সিলেক্ট, শুরুতে "Last Session" এবং ডিফল্টে সিলেক্টেড) → Course (মাল্টি সিলেক্ট) → Branch Mentor (সিঙ্গেল-সিলেক্ট) → Branch (মাল্টি সিলেক্ট) → Name of Examination (SSC/HSC) (মাল্টি সিলেক্ট) → Report Type (৫টি ভিউ)।</p>
                                               </li>
                                               <li style="margin-top:12px;">
                                                 <strong>ডাটা টেবিল</strong>
